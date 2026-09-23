@@ -357,39 +357,51 @@
       background: #FFFFFF;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: 0;
       box-shadow: var(--shadow-lg);
       position: relative;
       overflow: hidden;
       cursor: pointer;
     }
 
-    .visual-top-bar {
+    .visual-bottom-panel {
+      padding: 14px 18px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .visual-info-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 16px;
+      gap: 12px;
     }
 
-    .nfc-status-badge {
-      display: inline-flex;
+    .tree-title-group {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      background: #DCFCE7;
-      color: #15803D;
-      padding: 4px 10px;
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 600;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    #heroTreeTitle {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .btn-reroll-hero {
+      flex-shrink: 0;
       background: var(--color-primary-light);
       color: var(--color-primary);
-      border: none;
-      padding: 4px;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
       font-size: 0.74rem;
       font-weight: 600;
       cursor: pointer;
@@ -400,7 +412,9 @@
     }
 
     .btn-reroll-hero:hover {
-      transform: scale(1.04);
+      background: #DCFCE7;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);
     }
 
     .btn-reroll-hero:active {
@@ -412,6 +426,7 @@
       height: 7px;
       background: #22C55E;
       border-radius: 50%;
+      flex-shrink: 0;
       animation: pulse 2s infinite;
     }
 
@@ -420,22 +435,34 @@
       50% { transform: scale(1.4); opacity: 0.6; }
     }
 
+    .visual-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border-color);
+    }
+
     .canvas-container {
       position: relative;
       width: 100%;
-      height: 330px;
+      aspect-ratio: 4 / 3;
+      height: auto;
       background: radial-gradient(circle at 50% 90%, #E8F5E9 0%, #F8FAF8 75%);
-      border-radius: var(--radius-md);
+      border: none;
+      border-bottom: 1px solid var(--border-color);
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid #E8F2EC;
     }
 
     #heroCanvas {
       width: 100%;
       height: 100%;
+      aspect-ratio: 4 / 3;
       display: block;
     }
 
@@ -549,54 +576,74 @@
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 28px 20px;
+      padding: 0;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
       position: relative;
+      overflow: hidden;
       transition: all 0.25s ease;
     }
 
     .step-card:hover {
       transform: translateY(-4px);
       box-shadow: var(--shadow-md);
-      border-color: #BBF7D0;
+      border-color: #86EFAC;
     }
 
-    .step-number {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: var(--color-primary-light);
-      color: var(--color-primary);
-      font-family: var(--font-heading);
-      font-size: 1.15rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
+    .step-card:hover .step-icon-wrap svg {
+      transform: scale(1.1);
     }
 
     .step-icon-wrap {
-      height: 100px;
-      margin-bottom: 20px;
+      width: 100%;
+      height: 125px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--bg-subtle);
-      border-radius: var(--radius-md);
-      padding: 16px;
+      background: radial-gradient(circle at 50% 60%, #E8F5E9 0%, #F8FAF8 80%);
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
     }
 
     .step-icon-wrap svg {
       max-width: 100%;
       max-height: 100%;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .step-number {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      color: #15803D;
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .step-body {
+      padding: 20px 18px 24px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
 
     .step-title {
       font-family: var(--font-heading);
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
       color: var(--text-main);
       margin-bottom: 10px;
@@ -607,6 +654,7 @@
       font-size: 0.88rem;
       color: var(--text-muted);
       line-height: 1.6;
+      margin: 0;
     }
 
     /* =========================================
@@ -704,6 +752,72 @@
       border-color: var(--color-primary);
       color: var(--color-primary);
       transform: scale(1.05);
+    }
+
+    /* Bottom Left HUD - Rarity Tag */
+    .sandbox-bottom-left-hud {
+      position: absolute;
+      bottom: 18px;
+      left: 20px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .sandbox-rarity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.25s ease;
+      pointer-events: auto;
+    }
+
+    .sandbox-rarity-badge .rarity-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background-color 0.25s ease;
+    }
+
+    /* Common */
+    .sandbox-rarity-badge.rarity-common {
+      background: rgba(236, 253, 245, 0.95);
+      border: 1px solid #10b981;
+      color: #059669;
+    }
+    .sandbox-rarity-badge.rarity-common .rarity-dot {
+      background: #10b981;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Rare */
+    .sandbox-rarity-badge.rarity-rare {
+      background: rgba(239, 246, 255, 0.95);
+      border: 1px solid #3b82f6;
+      color: #2563eb;
+    }
+    .sandbox-rarity-badge.rarity-rare .rarity-dot {
+      background: #3b82f6;
+      box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Legendary */
+    .sandbox-rarity-badge.rarity-legendary {
+      background: rgba(254, 249, 195, 0.95);
+      border: 1px solid #eab308;
+      color: #ca8a04;
+    }
+    .sandbox-rarity-badge.rarity-legendary .rarity-dot {
+      background: #eab308;
+      box-shadow: 0 0 6px rgba(234, 179, 8, 0.4);
     }
 
     /* Controls Panel */
@@ -1233,10 +1347,24 @@
     @media (max-width: 1024px) {
       .hero-grid {
         grid-template-columns: 1fr;
-        gap: 36px;
+        gap: 32px;
       }
       .hero-visual {
         order: -1;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      .visual-card-wrap {
+        padding: 0;
+        border-radius: 20px;
+      }
+      .visual-bottom-panel {
+        padding: 14px 18px;
+      }
+      .floating-nfc-tag {
+        right: 14px;
+        bottom: -12px;
       }
       .steps-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1266,10 +1394,40 @@
       .hero-grid {
         display: flex;
         flex-direction: column;
+        gap: 20px;
       }
       .hero-visual {
         order: 1;
-        margin-bottom: 8px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0 10px;
+      }
+      .visual-card-wrap {
+        padding: 0;
+        border-radius: 16px;
+      }
+      .visual-bottom-panel {
+        padding: 12px 14px;
+        gap: 8px;
+      }
+      .floating-nfc-tag {
+        right: 12px;
+        bottom: -10px;
+        padding: 8px 12px;
+        gap: 8px;
+        border-radius: 12px;
+      }
+      .nfc-chip-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+      .nfc-chip-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+      .tag-title {
+        font-size: 0.72rem;
       }
       .hero-content {
         order: 2;
@@ -1299,25 +1457,29 @@
         gap: 12px;
       }
       .step-card {
-        padding: 18px 14px;
-      }
-      .step-num {
-        width: 32px;
-        height: 32px;
-        font-size: 0.85rem;
-        margin-bottom: 12px;
+        padding: 0;
+        border-radius: 16px;
       }
       .step-icon-wrap {
-        height: 70px;
-        margin-bottom: 12px;
-        padding: 10px;
+        height: 95px;
+      }
+      .step-number {
+        top: 8px;
+        left: 8px;
+        width: 26px;
+        height: 26px;
+        font-size: 0.78rem;
+        border-radius: 8px;
+      }
+      .step-body {
+        padding: 12px 12px 16px;
       }
       .step-title {
-        font-size: 0.98rem;
+        font-size: 0.95rem;
         margin-bottom: 6px;
       }
       .step-desc {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         line-height: 1.45;
       }
 
@@ -1342,6 +1504,14 @@
       #sandbox-canvas-container {
         min-height: 360px;
       }
+      .sandbox-bottom-left-hud {
+        bottom: 14px;
+        left: 14px;
+      }
+      .sandbox-rarity-badge {
+        padding: 5px 12px;
+        font-size: 0.78rem;
+      }
 
       /* Core Values Section: Switch from Table to Mobile Cards */
       .comparison-table-wrap {
@@ -1353,6 +1523,59 @@
 
       .section-title {
         font-size: 1.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-visual {
+        width: 100%;
+        max-width: 100%;
+      }
+      .visual-card-wrap {
+        padding: 0;
+        border-radius: 14px;
+      }
+      .visual-bottom-panel {
+        padding: 10px 12px;
+        gap: 6px;
+      }
+      #heroTreeTitle {
+        font-size: 0.86rem !important;
+      }
+      .btn-reroll-hero {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+      }
+      .floating-nfc-tag {
+        right: 8px;
+        bottom: -8px;
+        padding: 5px 10px;
+        gap: 6px;
+        border-radius: 10px;
+      }
+      .nfc-chip-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+      }
+      .nfc-chip-icon svg {
+        width: 13px;
+        height: 13px;
+      }
+      .tag-title {
+        font-size: 0.68rem;
+      }
+      .step-icon-wrap {
+        height: 85px;
+      }
+      .step-body {
+        padding: 10px 10px 14px;
+      }
+      .step-title {
+        font-size: 0.88rem;
+      }
+      .step-desc {
+        font-size: 0.74rem;
       }
     }
 
@@ -1846,30 +2069,33 @@
         <!-- Right: Live Visual & Physical Tag Mockup -->
         <div class="hero-visual">
           <div class="visual-card-wrap" onclick="document.getElementById('interactive-demo').scrollIntoView({behavior:'smooth'})" title="Bấm để cuộn đến bảng điều khiển tương tác">
-            <div class="visual-top-bar">
-              <div>
-                <strong id="heroTreeTitle" style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-main);">Cổ Thụ Lục Bảo • Ngọc Bích</strong>
-              </div>
-              <div class="nfc-status-badge">
-                <span class="status-dot"></span>
+            <div class="canvas-container">
+              <canvas id="heroCanvas" width="480" height="360"></canvas>
+            </div>
+
+            <div class="visual-bottom-panel">
+              <div class="visual-info-row">
+                <div class="tree-title-group">
+                  <span class="status-dot"></span>
+                  <strong id="heroTreeTitle" style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-main);">Cổ Thụ Lục Bảo • Ngọc Bích</strong>
+                </div>
                 <button type="button" class="btn-reroll-hero" onclick="event.stopPropagation(); reRollHeroTree();" title="Gieo ngẫu nhiên một cây mẫu khác cho phần mở đầu">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
                   <span data-i18n="heroRerollBtn">Đổi Cây Mẫu</span>
                 </button>
               </div>
-            </div>
 
-            <div class="canvas-container">
-              <canvas id="heroCanvas" width="420" height="330"></canvas>
-            </div>
-
-            <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;" data-i18n="heroGrowthLabel">Tiến độ sinh trưởng:</span>
-                <span id="heroProgressText" style="font-family: var(--font-mono); font-weight: 700; color: var(--color-primary); font-size: 0.95rem; margin-left: 6px;">100%</span>
+              <div class="visual-status-row">
+                <div>
+                  <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;" data-i18n="heroGrowthLabel">Tiến độ sinh trưởng:</span>
+                  <span id="heroProgressText" style="font-family: var(--font-mono); font-weight: 700; color: var(--color-primary); font-size: 0.92rem; margin-left: 4px;">100%</span>
+                </div>
+                <span id="heroBadgeStatus" style="font-size: 0.75rem; background: #FEF3C7; color: #B45309; padding: 3px 8px; border-radius: 6px; font-weight: 600;">
+                  ✨ Sắp nở hạt giống F1
+                </span>
               </div>
-              <span id="heroBadgeStatus" style="font-size: 0.75rem; background: #FEF3C7; color: #B45309; padding: 3px 8px; border-radius: 6px; font-weight: 600;">
-                ✨ Sắp nở hạt giống F1
-              </span>
             </div>
           </div>
 
@@ -1901,8 +2127,8 @@
       <div class="steps-grid">
         <!-- Step 1 -->
         <div class="step-card">
-          <div class="step-number">01</div>
           <div class="step-icon-wrap">
+            <span class="step-number">01</span>
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
               <rect x="8" y="12" width="28" height="40" rx="4" stroke="#15803D" stroke-width="2.5" fill="#DCFCE7"/>
               <rect x="28" y="24" width="28" height="18" rx="3" stroke="#D97706" stroke-width="2" fill="#FEF3C7"/>
@@ -1910,16 +2136,18 @@
               <path d="M42 27c4 0 7 3 7 6.5s-3 6.5-7 6.5" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <h3 class="step-title" data-i18n="step1Title">1. Có Thẻ Hạt Giống NFC</h3>
-          <p class="step-desc" data-i18n-html="step1Desc">
-            Bạn cần có thẻ hạt giống NFC được bạn bè chia sẻ, hoặc tự tạo hạt giống theo <a href="#guide-seed" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">hướng dẫn tại đây</a>. Chiếc thẻ này lưu giữ mầm sống và mã gen ban đầu của cây.
-          </p>
+          <div class="step-body">
+            <h3 class="step-title" data-i18n="step1Title">1. Có Thẻ Hạt Giống NFC</h3>
+            <p class="step-desc" data-i18n-html="step1Desc">
+              Bạn cần có thẻ hạt giống NFC được bạn bè chia sẻ, hoặc tự tạo hạt giống theo <a href="#guide-seed" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">hướng dẫn tại đây</a>. Chiếc thẻ này lưu giữ mầm sống và mã gen ban đầu của cây.
+            </p>
+          </div>
         </div>
 
         <!-- Step 2 -->
         <div class="step-card">
-          <div class="step-number">02</div>
           <div class="step-icon-wrap">
+            <span class="step-number">02</span>
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
               <circle cx="32" cy="32" r="24" stroke="#15803D" stroke-width="2.5" fill="#F0FDF4"/>
               <path d="M32 18v14l10 6" stroke="#15803D" stroke-width="2.5" stroke-linecap="round"/>
@@ -1927,16 +2155,18 @@
               <path d="M48 20l4-4M16 20l-4-4" stroke="#86A397" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <h3 class="step-title" data-i18n="step2Title">2. Lớn Theo Thời Gian Thực</h3>
-          <p class="step-desc" data-i18n="step2Desc">
-            Cây có chu kỳ sống riêng (vài ngày hoặc vài tuần). Bạn có thể tắt app, cây vẫn tiếp tục lớn một cách tự động.
-          </p>
+          <div class="step-body">
+            <h3 class="step-title" data-i18n="step2Title">2. Lớn Theo Thời Gian Thực</h3>
+            <p class="step-desc" data-i18n="step2Desc">
+              Cây có chu kỳ sống riêng (vài ngày hoặc vài tuần). Bạn có thể tắt app, cây vẫn tiếp tục lớn một cách tự động.
+            </p>
+          </div>
         </div>
 
         <!-- Step 3 -->
         <div class="step-card">
-          <div class="step-number">03</div>
           <div class="step-icon-wrap">
+            <span class="step-number">03</span>
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
               <path d="M32 52v-18M32 34l-12-10M32 34l12-10M20 24l-6-6M20 24l4-8M44 24l6-6M44 24l-4-8" stroke="#15803D" stroke-width="2.5" stroke-linecap="round"/>
               <circle cx="14" cy="18" r="4" fill="#22C55E"/>
@@ -1945,16 +2175,18 @@
               <circle cx="40" cy="16" r="4" fill="#16A34A"/>
             </svg>
           </div>
-          <h3 class="step-title" data-i18n="step3Title">3. Đa Dạng Hình Thái & Màu Sắc</h3>
-          <p class="step-desc" data-i18n="step3Desc">
-            Khám phá 14 hình thái lá đặc trưng (Anh Đào, Phong Đỏ, Ngân Hạnh, Liễu...) cùng 12 bảng màu di truyền phong phú. Mỗi cây khi lớn mang diện mạo riêng biệt.
-          </p>
+          <div class="step-body">
+            <h3 class="step-title" data-i18n="step3Title">3. Đa Dạng Hình Thái & Màu Sắc</h3>
+            <p class="step-desc" data-i18n="step3Desc">
+              Khám phá 14 hình thái lá đặc trưng (Anh Đào, Phong Đỏ, Ngân Hạnh, Liễu...) cùng 12 bảng màu di truyền phong phú. Mỗi cây khi lớn mang diện mạo riêng biệt.
+            </p>
+          </div>
         </div>
 
         <!-- Step 4 -->
         <div class="step-card">
-          <div class="step-number">04</div>
           <div class="step-icon-wrap">
+            <span class="step-number">04</span>
             <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
               <circle cx="32" cy="26" r="10" stroke="#D97706" stroke-width="2.5" fill="#FEF3C7"/>
               <path d="M32 18l2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1 2-5z" fill="#D97706"/>
@@ -1962,10 +2194,12 @@
               <path d="M26 54h12" stroke="#86A397" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <h3 class="step-title" data-i18n="step4Title">4. Nhân Giống & Trao Tặng</h3>
-          <p class="step-desc" data-i18n="step4Desc">
-            Khi cây đạt 100%, cây sẽ tự động ra quả. Bạn chỉ cần thu hoạch lại hạt giống F1 vào một thẻ NFC khác để tặng người thân.
-          </p>
+          <div class="step-body">
+            <h3 class="step-title" data-i18n="step4Title">4. Nhân Giống & Trao Tặng</h3>
+            <p class="step-desc" data-i18n="step4Desc">
+              Khi cây đạt 100%, cây sẽ tự động ra quả. Bạn chỉ cần thu hoạch lại hạt giống F1 vào một thẻ NFC khác để tặng người thân.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -2002,6 +2236,14 @@
                   <line x1="17" y1="9" x2="23" y2="15"/>
                 </svg>
               </button>
+            </div>
+          </div>
+
+          <!-- Bottom Left HUD (Rarity Tag) -->
+          <div class="sandbox-bottom-left-hud">
+            <div class="sandbox-rarity-badge rarity-common" id="sandboxRarityBadge">
+              <span class="rarity-dot" id="sandboxRarityDot"></span>
+              <span class="rarity-text" id="sandboxRarityText">Phổ Biến</span>
             </div>
           </div>
 
@@ -2545,6 +2787,9 @@
         demoDesc: "Bạn có thể xem thử các mẫu cây được tạo ngẫu nhiên trong bảo tàng cây giống số dưới đây, bạn có thể sở hữu một trong số chúng vào một lúc nào đó.",
         demoBadgeSway: "Đang đung đưa theo gió • 60 FPS",
         demoAudioTitle: "Bật/Tắt chuông Zen",
+        rarityCommon: "Phổ Biến",
+        rarityRare: "Hiếm",
+        rarityLegendary: "Huyền Thoại",
         controlGrowthLabel: "Tiến Trình Sinh Trưởng:",
         growthSprout: "0% (Hạt Mầm)",
         growthBranch: "50% (Phân Cành)",
@@ -2644,6 +2889,9 @@
         demoDesc: "Explore random tree specimens in the digital seed museum below — you might own one of them some day.",
         demoBadgeSway: "Harmonic wind sway • 60 FPS",
         demoAudioTitle: "Toggle Zen Chime",
+        rarityCommon: "Common",
+        rarityRare: "Rare",
+        rarityLegendary: "Legendary",
         controlGrowthLabel: "Growth Progress:",
         growthSprout: "0% (Seedling)",
         growthBranch: "50% (Branching)",
@@ -2902,7 +3150,7 @@
         initLength: heroTreeParams.initLength,
         branchAngle: heroTreeParams.branchAngle,
         lengthDecay: heroTreeParams.lengthDecay,
-        initThickness: heroTreeParams.initThickness,
+        initThickness: Math.max(heroTreeParams.initThickness, 35),
         thicknessDecay: heroTreeParams.thicknessDecay,
         maxDepth: heroTreeParams.maxDepth,
         minBranchLength: heroTreeParams.minBranchLength,
@@ -3093,6 +3341,45 @@
       panY = 0;
     }
 
+    /**
+     * Tính toán độ hiếm của cây theo đúng logic di truyền trong App (GeneticsConfig.ts):
+     * Dựa trên leafType (palette màu lá) kết hợp leafShape (hình thái lá) với 4 ngoại lệ sinh học:
+     * 1. Cánh Anh Đào (sakura_leaf) + Hồng Phấn (sakura) => Phổ Biến (common)
+     * 2. Lá Phong (maple / maple5) + Hoàng Hôn (sunset) => Phổ Biến (common)
+     * 3. Lá Ngân Hạnh (ginkgo_fan) + Hoàng Kim (ginkgo) => Phổ Biến (common)
+     * 4. Lá Khuynh Diệp Tròn / Bạch Đàn (round / eucalyptus_long) + Khói Bạc (eucalyptus) => Phổ Biến (common)
+     */
+    function getTreeRarity(leafShape, leafPalette) {
+      // Ngoại lệ 1: Cánh Anh Đào màu Hồng Phấn là common
+      if (leafShape === 'sakura_leaf' && leafPalette === 'sakura') {
+        return 'common';
+      }
+      // Ngoại lệ 2: Lá Phong (2 loại) màu Hoàng Hôn là common
+      if ((leafShape === 'maple' || leafShape === 'maple5') && leafPalette === 'sunset') {
+        return 'common';
+      }
+      // Ngoại lệ 3: Lá Ngân Hạnh màu Hoàng Kim là common
+      if (leafShape === 'ginkgo_fan' && leafPalette === 'ginkgo') {
+        return 'common';
+      }
+      // Ngoại lệ 4: Lá Khuynh Diệp Tròn & Bạch Đàn màu Khói Bạc là common
+      if ((leafShape === 'round' || leafShape === 'eucalyptus_long') && leafPalette === 'eucalyptus') {
+        return 'common';
+      }
+
+      // Phân cấp chuẩn theo bảng màu (Default Palette Rarity)
+      const legendaryPalettes = ['sakura', 'frost', 'golden'];
+      const rarePalettes = ['ginkgo', 'wisteria', 'midnight', 'ruby', 'shadow', 'sunset'];
+
+      if (legendaryPalettes.includes(leafPalette)) {
+        return 'legendary';
+      }
+      if (rarePalettes.includes(leafPalette)) {
+        return 'rare';
+      }
+      return 'common';
+    }
+
     function updateInfoHUD() {
       const shapeObj = ALL_LEAF_SHAPES.find(s => s.id === currentTreeParams.leafShape) || ALL_LEAF_SHAPES[0];
       const paletteObj = ALL_LEAF_COLOR_PALETTES.find(p => p.id === currentTreeParams.leafType) || ALL_LEAF_COLOR_PALETTES[0];
@@ -3119,6 +3406,19 @@
           badgeStateText.textContent = currentLang === 'en' ? `Branching & Flourishing (${pct}%)` : `Đang bung nở cành lá (${pct}%)`;
         }
       }
+
+      // Cập nhật Tag Độ Hiếm ở góc dưới bên trái cây (Khu Vườn Zen)
+      const rarity = getTreeRarity(currentTreeParams.leafShape, currentTreeParams.leafType);
+      const rarityBadge = document.getElementById('sandboxRarityBadge');
+      const rarityText = document.getElementById('sandboxRarityText');
+      if (rarityBadge && rarityText) {
+        rarityBadge.className = `sandbox-rarity-badge rarity-${rarity}`;
+        const rarityKey = rarity === 'legendary' ? 'rarityLegendary' : (rarity === 'rare' ? 'rarityRare' : 'rarityCommon');
+        const translatedText = (I18N[currentLang] && I18N[currentLang][rarityKey])
+          ? I18N[currentLang][rarityKey]
+          : (rarity === 'legendary' ? 'Huyền Thoại' : (rarity === 'rare' ? 'Hiếm' : 'Phổ Biến'));
+        rarityText.textContent = translatedText;
+      }
     }
 
     // =========================================================================
@@ -3127,12 +3427,24 @@
     let p5Canvas = null;
 
     function setup() {
-      const container = document.getElementById('sandbox-canvas-container');
-      const w = Math.max(container ? (container.offsetWidth || 340) : 340, 280);
-      const h = Math.max(container ? (container.offsetHeight || 380) : 380, 320);
+      const sandboxContainer = document.getElementById('sandbox-canvas-container');
+      const heroContainer = document.querySelector('.hero-visual .canvas-container');
+      const sW = sandboxContainer ? (sandboxContainer.offsetWidth || 340) : 340;
+      const sH = sandboxContainer ? (sandboxContainer.offsetHeight || 380) : 380;
+      const hW = heroContainer ? (heroContainer.offsetWidth || 480) : 480;
+      const hH = Math.round(hW * 0.75);
+
+      const w = Math.max(sW, hW, 600);
+      const h = Math.max(sH, hH, 450);
+
+      // Enforce high Retina DPR for pin-sharp vector drawing
+      const dpr = Math.min(window.devicePixelRatio || 2, 2);
+      pixelDensity(dpr);
 
       p5Canvas = createCanvas(w, h);
       p5Canvas.parent('sandbox-canvas-container');
+      p5Canvas.elt.style.width = '100%';
+      p5Canvas.elt.style.height = '100%';
 
       // Alpha in p5 RGB
       colorMode(RGB, 255, 255, 255, 1);
@@ -3156,22 +3468,26 @@
 
     function draw() {
       // =========================================================
-      // PASS 1: RENDER HERO TREE (FITS DIRECTLY INTO 420x330)
+      // PASS 1: RENDER HERO TREE (PIN-SHARP RETINA 4:3)
       // =========================================================
       const heroCanvas = document.getElementById('heroCanvas');
       if (heroTree && heroCanvas) {
         clear();
         push();
-        const heroW = 420;
-        const heroH = 330;
-        const groundY = heroH - 24;
+
+        const dpr = (typeof pixelDensity === 'function') ? pixelDensity() : (window.devicePixelRatio || 2);
+        const heroRect = heroCanvas.getBoundingClientRect();
+        // Dynamic native display size (matches actual CSS box without arbitrary 480 cap)
+        const heroW = Math.min(width, Math.max(Math.round(heroRect.width || 480), 320));
+        const heroH = Math.min(height, Math.round(heroW * 0.75));
+        const groundY = heroH - 18;
 
         // Auto-fit heroTree to (heroW, heroH)
         const bounds = getTreeBounds(heroTree);
-        const padX = 28;
-        const padTop = 22;
-        const availW = Math.max(100, heroW - padX * 2);
-        const availH = Math.max(100, groundY - padTop);
+        const padX = Math.round(heroW * 0.04);
+        const padTop = Math.round(heroH * 0.04);
+        const availW = Math.max(80, heroW - padX * 2);
+        const availH = Math.max(80, groundY - padTop);
         const heroZoom = Math.min(availW / bounds.width, availH / bounds.height);
         const heroCenterX = (bounds.left + bounds.right) / 2;
 
@@ -3197,15 +3513,22 @@
         heroTree.draw(time);
         pop();
 
-        // Copy rendered hero area to heroCanvas with device pixel ratio
+        // Copy rendered hero area with exact 1:1 pixel fidelity (no resampling)
         const hCtx = heroCanvas.getContext('2d');
         if (hCtx) {
-          const dpr = (typeof pixelDensity === 'function') ? pixelDensity() : 1;
-          hCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+          const targetW = Math.round(heroW * dpr);
+          const targetH = Math.round(heroH * dpr);
+          if (heroCanvas.width !== targetW || heroCanvas.height !== targetH) {
+            heroCanvas.width = targetW;
+            heroCanvas.height = targetH;
+          }
+          hCtx.imageSmoothingEnabled = true;
+          hCtx.imageSmoothingQuality = 'high';
+          hCtx.clearRect(0, 0, targetW, targetH);
           hCtx.drawImage(
             p5Canvas.elt,
-            0, 0, heroW * dpr, heroH * dpr,
-            0, 0, heroCanvas.width, heroCanvas.height
+            0, 0, targetW, targetH,
+            0, 0, targetW, targetH
           );
         }
       }
@@ -3244,11 +3567,19 @@
     }
 
     function windowResized() {
-      const container = document.getElementById('sandbox-canvas-container');
-      if (container) {
-        const w = Math.max(container.offsetWidth || 340, 280);
-        const h = Math.max(container.offsetHeight || 380, 320);
+      const sandboxContainer = document.getElementById('sandbox-canvas-container');
+      const heroContainer = document.querySelector('.hero-visual .canvas-container');
+      if (sandboxContainer) {
+        const sW = sandboxContainer.offsetWidth || 340;
+        const sH = sandboxContainer.offsetHeight || 380;
+        const hW = heroContainer ? (heroContainer.offsetWidth || 480) : 480;
+        const hH = Math.round(hW * 0.75);
+
+        const w = Math.max(sW, hW, 600);
+        const h = Math.max(sH, hH, 450);
         resizeCanvas(w, h);
+        p5Canvas.elt.style.width = '100%';
+        p5Canvas.elt.style.height = '100%';
         autoFitTree();
       }
     }
