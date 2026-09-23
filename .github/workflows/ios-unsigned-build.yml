@@ -1,0 +1,64 @@
+name: iOS Unsigned Build
+
+on:
+  workflow_dispatch: # Cho phép bấm Run Workflow thủ công trên giao diện GitHub Actions
+
+jobs:
+  build-ios:
+    name: Build Unsigned IPA (Real Device)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci || npm install
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build Unsigned .app
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace TreeNFCGame.xcworkspace \
+            -scheme TreeNFCGame \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package .ipa
+        run: |
+          cd ios
+          mkdir -p build/Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app build/Payload/
+          cd build
+          zip -r TreeNFCGame-unsigned.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TreeNFCGame-unsigned-ipa
+          path: ios/build/TreeNFCGame-unsigned.ipa
+          retention-days: 7

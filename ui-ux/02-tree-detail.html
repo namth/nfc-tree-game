@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cây Phân Nhánh Đa Phân - Trải Nghiệm Mobile 100% | Fractal Tree NFC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- p5.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <!-- Authentic Fractal Tree Library from namth/fractal-tree (gravity release) -->
+  <script src="lib/random-engine.js?v=20260909_1525"></script>
+  <script src="lib/verlet.js?v=20260909_1525"></script>
+  <script src="lib/leaf-configs.js?v=20260909_1525"></script>
+  <script src="lib/fractal-branch-tree.js?v=20260909_1525"></script>
+
+  <style>
+    :root {
+      --bg-midnight: radial-gradient(circle at 50% 35%, #18261f 0%, #070c0a 100%);
+      --glass-bg: rgba(18, 26, 22, 0.78);
+      --glass-border: rgba(74, 222, 128, 0.22);
+      --accent-green: #4ade80;
+      --accent-gold: #fbbf24;
+      --accent-sakura: #f472b6;
+      --text-main: #f0fdf4;
+      --text-muted: #8ba598;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #040706;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    /* PHONE FRAME CONTAINER (CANVAS-FIRST 100% IMMERSIVE VIEWPORT) */
+    .phone-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 890px;
+      background: var(--bg-midnight);
+      border-radius: 48px;
+      border: 8px solid #233129;
+      box-shadow: 0 25px 80px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* FULLSCREEN TOGGLE CLASS */
+    body.is-fullscreen {
+      padding: 0;
+    }
+    body.is-fullscreen .phone-frame {
+      max-width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+    }
+
+    /* Notch & Status Bar */
+    .notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 26px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+    }
+    .status-bar {
+      height: 48px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 90;
+      pointer-events: none;
+    }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-green);
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      padding: 3px 8px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+    }
+
+    /* 100% FULL-SCREEN MOBILE CANVAS CONTAINER */
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      cursor: grab;
+    }
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+    #canvas-container canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* =========================================================================
+       TOP FLOATING HUD CONTROLS (BACK BUTTON, BADGES, ZOOM IN / OUT)
+       ========================================================================= */
+    .top-back-btn {
+      position: absolute;
+      top: 52px;
+      left: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: rgba(18, 26, 22, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 50;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+    .top-back-btn:hover {
+      background: rgba(30, 44, 36, 0.95);
+      color: #fff;
+      border-color: rgba(74, 222, 128, 0.4);
+      transform: translateY(-1px);
+    }
+    .top-back-btn:active {
+      transform: scale(0.92);
+    }
+
+    .top-badges-hud {
+      position: absolute;
+      top: 52px;
+      right: 16px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .gen-badge {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .rarity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .rarity-badge.common {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+    .rarity-badge.rare {
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
+    }
+    .rarity-badge.legendary {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      color: #fbbf24;
+    }
+
+    /* ZOOM CONTROLS (DỌC THẲNG XUỐNG DƯỚI ĐỜI CÂY) */
+    .zoom-controls-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+      pointer-events: auto;
+    }
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(18, 26, 22, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .zoom-btn:hover {
+      background: rgba(30, 44, 36, 0.95);
+      color: #fff;
+      border-color: rgba(74, 222, 128, 0.4);
+      transform: translateY(-1px);
+    }
+    .zoom-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* =========================================================================
+       GROUND SOIL FOUNDATION BOX (NỀN ĐẤT FULLWIDTH GỌN GÀNG DƯỚI GỐC CÂY)
+       ========================================================================= */
+    .ground-soil-box {
+      position: absolute;
+      bottom: 72px;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: linear-gradient(180deg, #18241d 0%, #101813 45%, #090e0b 100%);
+      border-top: 1.5px solid rgba(74, 222, 128, 0.35);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.85);
+      border-radius: 0; /* Không bo tròn theo yêu cầu */
+      padding: 12px 18px 14px 18px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-sizing: border-box;
+    }
+
+    /* =========================================================================
+       BOTTOM NAVIGATION BAR (ĐỒNG BỘ TOÀN HỆ THỐNG APP)
+       ========================================================================= */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: rgba(15, 20, 18, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px 8px;
+      z-index: 80;
+    }
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .nav-tab:hover {
+      color: #fff;
+    }
+    .nav-tab:active {
+      transform: scale(0.95);
+    }
+    .nav-tab.active {
+      color: var(--accent-green);
+    }
+    .nav-tab svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+    }
+    .ground-soil-rim {
+      position: absolute;
+      top: -4px;
+      left: 20%;
+      right: 20%;
+      height: 3px;
+      background: radial-gradient(ellipse at center, rgba(74, 222, 128, 0.4) 0%, rgba(34, 197, 94, 0) 75%);
+      filter: blur(2px);
+      pointer-events: none;
+    }
+
+    /* PROGRESS BAR TINH TẾ NẰM NGAY TRÊN BORDER CỦA BOX (ẨN KHI 100%) */
+    .ground-progress-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 0;
+      overflow: hidden;
+    }
+    .ground-progress-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #34d399 75%, #fbbf24 100%);
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* TOP ROW: TÊN CÂY (CỠ THƯỜNG, IN ĐẬM) VÀ THỜI GIAN CÒN LẠI (CỠ CHỮ BÉ) */
+    .ground-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding-right: 0; /* Không cần chừa chỗ vì hạt giống đã lên cao hẳn */
+    }
+    .ground-tree-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0.2px;
+    }
+    .ground-time-countdown {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .ground-time-countdown.is-done {
+      display: none;
+    }
+
+    /* CORE SPECS: LOẠI LÁ, MÀU LÁ, MÀU THÂN (GỌN GÀNG 1 HÀNG) */
+    .ground-compact-specs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      color: #cbd5e1;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-top: 2px;
+    }
+    .ground-compact-specs::-webkit-scrollbar { display: none; }
+    .spec-compact-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .spec-compact-dot-divider {
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 8px;
+    }
+    .spec-color-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      flex-shrink: 0;
+    }
+
+    /* ICON HẠT GIỐNG DẠNG TRÒN, ĐƯỢC ĐẨY LÊN CAO HẲN SO VỚI BOX THÔNG TIN */
+    .harvest-seed-btn {
+      position: absolute;
+      top: -54px;
+      right: 18px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffbe6, #f59e0b 65%, #92400e 100%);
+      border: 1.5px solid #fef08a;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.75), 0 4px 12px rgba(0, 0, 0, 0.6);
+      display: none; /* Hiển thị khi 100% */
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 60;
+      animation: seedPulseBounce 2s ease-in-out infinite alternate;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .harvest-seed-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.85);
+    }
+    .harvest-seed-btn:active { transform: scale(0.95); }
+
+    @keyframes seedPulseBounce {
+      0% { transform: translateY(0) scale(0.98); }
+      100% { transform: translateY(-3px) scale(1.05); }
+    }
+
+    /* =========================================================================
+       POPUP THU HOẠCH HẠT GIỐNG (GIỮA MÀN HÌNH, KHÔNG LÀM MỜ NỀN XUNG QUANH)
+       ========================================================================= */
+    .harvest-popup-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      display: none;
+      animation: popupPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
+    }
+    @keyframes popupPopIn {
+      from { opacity: 0; transform: translate(-50%, -46%) scale(0.92); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .harvest-popup-card {
+      width: 270px;
+      background: rgba(18, 28, 22, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1.5px solid rgba(245, 158, 11, 0.55);
+      border-radius: 22px;
+      padding: 20px 18px 16px 18px;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.9), 0 0 24px rgba(245, 158, 11, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+      box-sizing: border-box;
+    }
+    .harvest-popup-icon {
+      font-size: 32px;
+      line-height: 1;
+      filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6));
+      animation: seedFloat 2s ease-in-out infinite alternate;
+    }
+    @keyframes seedFloat {
+      from { transform: translateY(0); }
+      to { transform: translateY(-4px); }
+    }
+    .harvest-popup-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fbbf24;
+      letter-spacing: 0.3px;
+    }
+    .harvest-popup-desc {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 2px;
+    }
+    .harvest-popup-instruction {
+      font-size: 11px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+    .harvest-popup-actions {
+      margin-top: 10px;
+      width: 100%;
+    }
+    .btn-cancel-popup {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cancel-popup:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+    }
+    .btn-cancel-popup:active {
+      transform: scale(0.97);
+    }
+
+
+    /* TOAST NOTIFICATION */
+    .toast-pill {
+      position: absolute;
+      top: 96px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(18, 26, 22, 0.96);
+      border: 1px solid var(--accent-green);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 120;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8);
+      white-space: nowrap;
+    }
+    .toast-pill.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="phone-frame" id="phoneContainer">
+    <div class="notch"></div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>12:45</span>
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>FRACTAL 60FPS FULL MOBILE</span>
+      </div>
+    </div>
+
+    <!-- 100% Full-Screen Mobile Living Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Floating Top-Left Back Button (Chỉ icon, không text) -->
+    <a href="01-garden-dashboard.html" class="top-back-btn" title="Quay lại" onclick="if(window.history.length > 1){window.history.back(); return false;}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </a>
+
+    <!-- Floating Top-Right Badges & Zoom Controls (Dọc thẳng xuống) -->
+    <div class="top-badges-hud">
+      <div class="rarity-badge common" id="topRarityBadge">🌱 Phổ Biến</div>
+      <div class="gen-badge" id="topGenBadge">Đời P</div>
+      
+      <!-- Icon Zoom In / Out ở ngay bên dưới đời cây dọc thẳng xuống -->
+      <div class="zoom-controls-col">
+        <button class="zoom-btn" onclick="zoomIn()" title="Phóng to" aria-label="Phóng to">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button class="zoom-btn" onclick="zoomOut()" title="Thu nhỏ" aria-label="Thu nhỏ">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Ground Soil Foundation Info Box (Nền Đất Dưới Chân Cây) -->
+    <div class="ground-soil-box" id="groundInfoBox">
+      <div class="ground-soil-rim"></div>
+
+      <!-- Subtle Progress Bar sitting right on the top border (ẩn khi 100%) -->
+      <div class="ground-progress-track" id="groundProgressTrack">
+        <div class="ground-progress-bar" id="groundProgressBar" style="width: 100%;"></div>
+      </div>
+
+      <!-- Harvest Seed Icon (Dạng icon tròn, không có text) -->
+      <div class="harvest-seed-btn" id="harvestSeedBadge" onclick="openHarvestNfcModal()" title="Thu hoạch hạt giống">
+        🌰
+      </div>
+
+      <!-- Top Row: Tên cây (cỡ thường, in đậm) & Thời gian còn lại (cỡ bé) -->
+      <div class="ground-top-row">
+        <div class="ground-tree-name" id="treeDisplayName">Cổ Thụ Lục Bảo • Ngọc Bích (Rêu Cổ Thụ)</div>
+        <div class="ground-time-countdown" id="growthTimeText">⏳ Còn lại 4h 12m</div>
+      </div>
+
+      <!-- Core Specs: Loại lá, Màu lá, Màu thân (gọn gàng 1 dòng) -->
+      <div class="ground-compact-specs">
+        <div class="spec-compact-item" id="specLeafShapeText">🌿 Lá Đỉnh Nhọn</div>
+        <div class="spec-compact-dot-divider">•</div>
+        <div class="spec-compact-item" id="specLeafColorText">
+          <span class="spec-color-dot" id="specLeafColorDot" style="background: #34d399;"></span>
+          <span id="specLeafColorName">Ngọc Bích</span>
+        </div>
+        <div class="spec-compact-dot-divider">•</div>
+        <div class="spec-compact-item" id="specTrunkColorText">
+          <span class="spec-color-dot" id="specTrunkColorDot" style="background: #2d2219;"></span>
+          <span id="specTrunkColorName">Cổ Thụ Rêu Phong</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Harvest Seed Popup (Bật ra giữa màn hình, KHÔNG LÀM MỜ NỀN XUNG QUANH) -->
+    <div class="harvest-popup-center" id="harvestNfcModal">
+      <div class="harvest-popup-card">
+        <div class="harvest-popup-icon">🌰</div>
+        <div class="harvest-popup-title">Thu hoạch hạt giống</div>
+        <div class="harvest-popup-desc" id="harvestPopupChildName">Cổ Thụ Lục Bảo đời F1</div>
+        <div class="harvest-popup-instruction" onclick="simulateNfcTap()" style="cursor: pointer;" title="Nhấp để mô phỏng chạm thẻ NFC">
+          <span id="nfcStatusLog">Chạm thẻ NFC để thu hoạch hạt giống</span>
+        </div>
+        <div class="harvest-popup-actions">
+          <button class="btn-cancel-popup" onclick="closeHarvestNfcModal()">Hủy</button>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Bottom Navigation Bar (Đồng bộ với các trang khác) -->
+    <div class="bottom-nav">
+      <a href="01-garden-dashboard.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Vườn Cây</span>
+      </a>
+      <a href="03-archive-gallery.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        <span>Nhà Kính</span>
+      </a>
+      <a href="04-settings-guide.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Cài Đặt</span>
+      </a>
+    </div>
+
+    <!-- Toast Pill Notification -->
+    <div class="toast-pill" id="toastPill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="toastMsg">Thông báo</span>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // AUTHENTIC FRACTAL TREE LIBRARY DATA CATALOG
+    // =========================================================================
+    const ALL_LEAF_SHAPES = [
+      { id: 'pointed', name: '🌿 Lá Đỉnh Nhọn', label: 'Lá Nhọn' },
+      { id: 'willow', name: '🌾 Liễu Rủ (Verlet Physics)', label: 'Liễu Rủ' },
+      { id: 'eucalyptus_long', name: '🍃 Bạch Đàn Lá Dài', label: 'Bạch Đàn Dài' },
+      { id: 'round', name: '🪙 Khuynh Diệp Tròn', label: 'Khuynh Diệp' },
+      { id: 'tung_lahan', name: '🎋 Tùng La Hán', label: 'Tùng La Hán' },
+      { id: 'sakura_leaf', name: '🌸 Cánh Anh Đào', label: 'Cánh Anh Đào' },
+      { id: 'needle', name: '🌲 Lá Thông 7 Kim', label: 'Lá Thông' },
+      { id: 'single_needle', name: '🌾 Lá Me Lông Chim', label: 'Lá Me' },
+      { id: 'maple', name: '🍁 Lá Phong Tròn', label: 'Phong Tròn' },
+      { id: 'maple5', name: '🍁 Lá Phong 5 Khía', label: 'Phong 5 Khía' },
+      { id: 'ginkgo_fan', name: '🍂 Ngân Hạnh Rẻ Quạt', label: 'Ngân Hạnh' },
+      { id: 'heart', name: '💚 Lá Trái Tim', label: 'Trái Tim' },
+      { id: 'bodhi', name: '🍃 Lá Bồ Đề', label: 'Bồ Đề' },
+      { id: 'oval', name: '🥚 Lá Oval Cổ Điển', label: 'Lá Oval' }
+    ];
+
+    // =========================================================================
+    // TRUNK & LEAF COLOR THEMES CATALOG (COMPLETELY DECOUPLED & INDEPENDENT)
+    // =========================================================================
+
+    // 1. Danh Mục Màu Sắc Thân Cây (Trunk Themes)
+    const ALL_TRUNK_THEMES = [
+      { id: 'emerald', name: 'Thân Rêu Cổ Thụ', label: 'Rêu Cổ Thụ', colors: ['#4a3b2c', '#557346'] },
+      { id: 'sakura', name: 'Mộc Trầm Anh Đào', label: 'Gỗ Anh Đào', colors: ['#5c4033', '#f48fb1'] },
+      { id: 'autumn', name: 'Gỗ Sồi Phong Ba', label: 'Gỗ Sồi Thu', colors: ['#4a3d35', '#f59e0b'] },
+      { id: 'eucalyptus', name: 'Bạch Đàn Khói Bạc', label: 'Bạch Đàn', colors: ['#3d5a4c', '#a8cab8'] },
+      { id: 'ebony', name: 'Hắc Mộc Cổ Điển', label: 'Hắc Mộc', colors: ['#3d3e48', '#50555f'] },
+      { id: 'birch', name: 'Bạch Dương Tuyết Phủ', label: 'Bạch Dương', colors: ['#60626a', '#e6ebf2'] },
+      { id: 'mahogany', name: 'Hồng Mộc Hoàng Gia', label: 'Hồng Mộc', colors: ['#5c2a2a', '#a5412d'] },
+      { id: 'amber', name: 'Hoàng Đàn Hổ Phách', label: 'Hoàng Đàn', colors: ['#583a22', '#d97706'] },
+      { id: 'cyberpunk', name: 'Huyền Dạ Dạ Quang', label: 'Dạ Quang', colors: ['#3f3274', '#ec4899'] }
+    ];
+
+    // 2. Danh Mục Bảng Màu Lá Cây (Leaf Color Palettes)
+    const ALL_LEAF_COLOR_PALETTES = [
+      { id: 'emerald', name: 'Ngọc Bích / Lục Bảo', label: 'Ngọc Bích', colors: ['#34d399', '#6ee7b7', '#059669'], defaultRarity: 'common' },
+      { id: 'eucalyptus', name: 'Khói Bạc / Bạc Hà', label: 'Khói Bạc', colors: ['#92b9a5', '#a8cab8', '#7aa08e'], defaultRarity: 'common' },
+      { id: 'sakura', name: 'Hồng Phấn / Anh Đào', label: 'Hồng Phấn', colors: ['#fda4ba', '#f472b6', '#fce7f3'], defaultRarity: 'common' },
+      { id: 'autumn', name: 'Phong Đỏ / Hỏa Diệm', label: 'Phong Đỏ', colors: ['#dc2626', '#ef4444', '#f97316'], defaultRarity: 'common' },
+      { id: 'ginkgo', name: 'Hoàng Kim / Ngân Hạnh', label: 'Hoàng Kim', colors: ['#facc15', '#eab308', '#f59e0b'], defaultRarity: 'rare' },
+      { id: 'wisteria', name: 'Tử Đằng / Dạ Lan', label: 'Tử Đằng', colors: ['#c084fc', '#a855f7', '#e879f9'], defaultRarity: 'rare' },
+      { id: 'frost', name: 'Băng Tuyết / Thiên Thanh', label: 'Băng Tuyết', colors: ['#38bdf8', '#7dd3fc', '#e0f2fe'], defaultRarity: 'rare' },
+      { id: 'sunset', name: 'Hoàng Hôn / Rạng Đông', label: 'Hoàng Hôn', colors: ['#f43f5e', '#fb923c', '#fbbf24'], defaultRarity: 'rare' },
+      { id: 'midnight', name: 'Huyền Dạ / Dạ Lam', label: 'Dạ Lam', colors: ['#6366f1', '#3b82f6', '#818cf8'], defaultRarity: 'legendary' },
+      { id: 'golden', name: 'Kim Diệp / Ánh Kim', label: 'Kim Diệp', colors: ['#fde047', '#facc15', '#ca8a04'], defaultRarity: 'legendary' },
+      { id: 'ruby', name: 'Hồng Ngọc / Huyết Phách', label: 'Hồng Ngọc', colors: ['#e11d48', '#f43f5e', '#fb7185'], defaultRarity: 'legendary' },
+      { id: 'shadow', name: 'Hắc Diệp / Hư Không', label: 'Hắc Diệp', colors: ['#94a3b8', '#475569', '#1e293b'], defaultRarity: 'legendary' }
+    ];
+
+    // Giữ tương thích ngược
+    const ALL_COLOR_THEMES = ALL_TRUNK_THEMES;
+
+    // 3. Định Nghĩa Cấp Độ Hiếm Của Màu Sắc Lá
+    const RARITY_CONFIG = {
+      common: {
+        id: 'common',
+        name: 'Phổ Biến',
+        badgeClass: 'common',
+        icon: '🌱',
+        color: '#34d399'
+      },
+      rare: {
+        id: 'rare',
+        name: 'Hiếm',
+        badgeClass: 'rare',
+        icon: '💎',
+        color: '#38bdf8'
+      },
+      legendary: {
+        id: 'legendary',
+        name: 'Huyền Thoại',
+        badgeClass: 'legendary',
+        icon: '👑',
+        color: '#fbbf24'
+      }
+    };
+
+    // 4. BẢNG CẤU HÌNH ĐỘ HIẾM MÀU SẮC CHO TỪNG LOẠI LÁ CÂY (Configurable Leaf Rarity Pools)
+    // Người dùng sau này có thể dễ dàng bổ sung / thay đổi màu phổ biến và hiếm cho từng loại lá tại đây!
+    const LEAF_TYPE_COLOR_POOLS = {
+      pointed: {
+        common: ['emerald', 'eucalyptus'],
+        rare: ['autumn', 'sunset', 'ginkgo'],
+        legendary: ['frost', 'wisteria', 'midnight', 'golden']
+      },
+      willow: {
+        common: ['emerald', 'eucalyptus'],
+        rare: ['frost', 'midnight', 'wisteria'],
+        legendary: ['golden', 'shadow']
+      },
+      eucalyptus_long: {
+        common: ['eucalyptus', 'emerald'],
+        rare: ['frost', 'sunset'],
+        legendary: ['midnight', 'ruby']
+      },
+      round: {
+        common: ['emerald', 'eucalyptus'],
+        rare: ['ginkgo', 'autumn'],
+        legendary: ['golden', 'wisteria']
+      },
+      tung_lahan: {
+        common: ['emerald'],
+        rare: ['frost', 'midnight', 'eucalyptus'],
+        legendary: ['golden', 'ruby', 'shadow']
+      },
+      sakura_leaf: {
+        common: ['sakura'],
+        rare: ['sunset', 'frost', 'wisteria'],
+        legendary: ['midnight', 'ruby']
+      },
+      needle: {
+        common: ['emerald'],
+        rare: ['frost', 'eucalyptus', 'midnight'],
+        legendary: ['golden', 'shadow']
+      },
+      single_needle: {
+        common: ['emerald', 'eucalyptus'],
+        rare: ['autumn', 'sunset', 'ginkgo'],
+        legendary: ['golden', 'frost']
+      },
+      maple: {
+        common: ['autumn', 'sunset'],
+        rare: ['ginkgo', 'emerald'],
+        legendary: ['ruby', 'midnight', 'shadow']
+      },
+      maple5: {
+        common: ['autumn', 'sunset'],
+        rare: ['ginkgo', 'wisteria'],
+        legendary: ['ruby', 'golden']
+      },
+      ginkgo_fan: {
+        common: ['ginkgo'],
+        rare: ['autumn', 'emerald', 'sunset'],
+        legendary: ['golden', 'frost']
+      },
+      heart: {
+        common: ['sakura', 'emerald'],
+        rare: ['wisteria', 'sunset'],
+        legendary: ['ruby', 'midnight']
+      },
+      bodhi: {
+        common: ['emerald', 'ginkgo'],
+        rare: ['sunset', 'wisteria', 'frost'],
+        legendary: ['golden', 'ruby']
+      },
+      oval: {
+        common: ['emerald', 'eucalyptus'],
+        rare: ['autumn', 'sunset', 'sakura'],
+        legendary: ['frost', 'wisteria', 'shadow']
+      }
+    };
+
+    // Hàm chọn màu lá độc lập theo tỷ lệ độ hiếm của từng loại lá
+    function pickLeafColorForShape(shapeId) {
+      const pool = LEAF_TYPE_COLOR_POOLS[shapeId] || {
+        common: ['emerald', 'eucalyptus', 'autumn', 'sakura'],
+        rare: ['ginkgo', 'wisteria', 'frost', 'sunset'],
+        legendary: ['midnight', 'golden', 'ruby', 'shadow']
+      };
+
+      // Tỷ lệ xuất hiện: Phổ biến (~70%), Hiếm (~25%), Huyền Thoại (~5%)
+      const roll = randFloat(0, 100);
+      let tier = 'common';
+      if (roll < 5 && pool.legendary && pool.legendary.length > 0) {
+        tier = 'legendary';
+      } else if (roll < 30 && pool.rare && pool.rare.length > 0) {
+        tier = 'rare';
+      } else {
+        tier = 'common';
+      }
+
+      const candidates = pool[tier] || pool.common || ['emerald'];
+      const pickedId = randChoice(candidates) || 'emerald';
+      return {
+        colorId: pickedId,
+        rarity: tier
+      };
+    }
+
+    // Tra cứu độ hiếm của một màu lá đối với loại lá cụ thể
+    function getLeafRarity(shapeId, colorId) {
+      const pool = LEAF_TYPE_COLOR_POOLS[shapeId];
+      if (pool) {
+        if (pool.legendary && pool.legendary.includes(colorId)) return 'legendary';
+        if (pool.rare && pool.rare.includes(colorId)) return 'rare';
+        if (pool.common && pool.common.includes(colorId)) return 'common';
+      }
+      const palette = ALL_LEAF_COLOR_PALETTES.find(p => p.id === colorId);
+      return palette ? palette.defaultRarity : 'common';
+    }
+
+    function generateTreeName(trunkTheme, leafColor, shape) {
+      const nameMap = {
+        'willow': 'Thanh Liễu Trọng Lực',
+        'eucalyptus_long': 'Bạch Đàn Nguyệt Vũ',
+        'round': 'Khuynh Diệp Kim Tiền',
+        'tung_lahan': 'Cổ Tùng La Hán',
+        'needle': 'Thanh Tùng Bách Niên',
+        'single_needle': 'Ngân Me Lông Chim',
+        'sakura_leaf': 'Anh Đào Tuyết Vũ',
+        'maple': 'Phong Ba Đại Ngàn',
+        'maple5': 'Phong Hỏa Tinh Thể',
+        'ginkgo_fan': 'Bạch Quả Hoàng Kim',
+        'heart': 'Tâm Mộc Linh Chi',
+        'bodhi': 'Bồ Đề Đại Giác',
+        'pointed': 'Cổ Thụ Lục Bảo',
+        'oval': 'Linh Mộc Cổ Điển'
+      };
+      const leafColorSuffix = {
+        'emerald': 'Ngọc Bích',
+        'eucalyptus': 'Khói Bạc',
+        'sakura': 'Hồng Phấn',
+        'autumn': 'Phong Đỏ',
+        'ginkgo': 'Hoàng Kim',
+        'wisteria': 'Tử Đằng',
+        'sunset': 'Hoàng Hôn',
+        'midnight': 'Dạ Lam',
+        'frost': 'Băng Giá',
+        'golden': 'Kim Sa',
+        'ruby': 'Hồng Ngọc',
+        'shadow': 'Hắc Diệp'
+      };
+      const baseName = (shape && nameMap[shape.id]) ? nameMap[shape.id] : 'Cây Fractal';
+      const leafSuf = leafColor ? (leafColorSuffix[leafColor.id] || leafColor.label || leafColor.name) : 'Tự Nhiên';
+      const trunkSuf = trunkTheme ? (trunkTheme.label || trunkTheme.name) : 'Cổ Thụ';
+      return `${baseName} • ${leafSuf} (${trunkSuf})`;
+    }
+
+    // High-entropy PRNG engine instance initialized with high-precision timestamp (identical to GitHub source sketch.js)
+    const globalPRNG = (typeof RandomEngine !== 'undefined') ? new RandomEngine(Date.now() ^ Math.floor(Math.random() * 1e9)) : null;
+
+    function randFloat(min = 0, max = 1) {
+      if (globalPRNG) {
+        return globalPRNG.range(min, max);
+      }
+      return min + Math.random() * (max - min);
+    }
+
+    function randChoice(arr) {
+      if (!arr || arr.length === 0) return null;
+      let idx = Math.floor(randFloat(0, arr.length));
+      return arr[idx];
+    }
+
+    // Current Tree Parameters (Synchronized 100% with authentic library)
+    let currentTreeParams = {
+      treeId: 492810,
+      generation: 0, // 0 = P (Cây Gốc), 1 = F1, 2 = F2...
+      parentTreeId: 0,
+      name: 'Cổ Thụ Lục Bảo • Ngọc Bích (Rêu Cổ Thụ)',
+      leafShape: 'pointed',
+      leafType: 'emerald',
+      colorTheme: 'emerald',
+      leafRarity: 'common',
+      colors: ['#34d399', '#6ee7b7', '#059669'],
+      initLength: 200,
+      branchAngle: 20,
+      lengthDecay: 0.75,
+      initThickness: 36,
+      thicknessDecay: 0.66,
+      maxDepth: 9,
+      minBranchLength: 15,
+      treeVariation: 0.80,
+      windStrength: 1.0,
+      treeType: 'sequential',
+      seed: 42,
+      uid: '04:C8:12:F3'
+    };
+
+    let treeRoot = null;
+    let currentProgress = 1.0; // Mặc định hiển thị 100% trọn vẹn
+    let totalDuration = 5.0;
+    let isAutoPlaying = false;
+    let audioEnabled = true;
+
+    // Pan & Drag State (Cho phép di chuyển cây tự do, cố định tỉ lệ zoom auto-fit)
+    let zoomLevel = 1.0;
+    let defaultZoom = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    // Web Audio Zen Tone
+    let audioCtx = null;
+    function playTone(freq = 528) {
+      if (!audioEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 1.8);
+      } catch (e) {}
+    }
+
+    function toggleAudioTone() {
+      audioEnabled = !audioEnabled;
+      const icon = document.getElementById('audioIcon');
+      if (audioEnabled) {
+        if (icon) icon.innerHTML = '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+        playTone(528);
+        showToast("Đã bật âm thanh Zen");
+      } else {
+        if (icon) icon.innerHTML = '<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>';
+        showToast("Đã tắt âm thanh");
+      }
+    }
+
+    // =========================================================================
+    // GROUND SOIL ANCHOR & AUTO-FIT CALCULATOR
+    // =========================================================================
+    function getGroundY() {
+      const container = document.getElementById('canvas-container');
+      const h = container ? (container.offsetHeight || 800) : (typeof height !== 'undefined' ? height : 800);
+      const groundBox = document.getElementById('groundInfoBox');
+
+      // QUY CHUẨN: Dịch tọa độ gốc cây lên cao (~32px) phía trên mép nền đất
+      // để toàn bộ bạnh gốc uốn lượn, rễ trồi và vạt gò đất hữu cơ lộ rõ hoàn toàn trong tầm nhìn!
+      if (groundBox && groundBox.offsetTop > 0) {
+        return groundBox.offsetTop - 32;
+      }
+      return h - 225;
+    }
+
+    function getTreeBounds(tree) {
+      if (!tree || !tree.root) return { width: 300, height: 500, top: -500, bottom: 0, left: -150, right: 150 };
+
+      let minX = 0, maxX = 0, minY = 0, maxY = 22;
+      function walk(node, x, y, angle) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+
+        let nextX = x + Math.sin(angle) * node.maxLen;
+        let nextY = y - Math.cos(angle) * node.maxLen;
+
+        minX = Math.min(minX, nextX);
+        maxX = Math.max(maxX, nextX);
+        minY = Math.min(minY, nextY);
+        maxY = Math.max(maxY, nextY);
+
+        if (node.children && node.children.length > 0) {
+          for (let c of node.children) {
+            walk(c, nextX, nextY, angle + c.angle);
+          }
+        } else {
+          // Terminal foliage margin padding (~35px)
+          minX = Math.min(minX, nextX - 35);
+          maxX = Math.max(maxX, nextX + 35);
+          minY = Math.min(minY, nextY - 40);
+          maxY = Math.max(maxY, nextY + 15);
+        }
+      }
+
+      let initTilt = (currentTreeParams.treeVariation > 0 && typeof noise === 'function')
+        ? (noise(99.9) - 0.5) * 2 * ((15 * Math.PI) / 180) * currentTreeParams.treeVariation
+        : 0;
+
+      walk(tree.root, 0, 0, initTilt);
+      return {
+        width: Math.max(maxX - minX, 100),
+        height: Math.max(maxY - minY, 100),
+        top: minY,
+        bottom: maxY,
+        left: minX,
+        right: maxX
+      };
+    }
+
+    function autoFitTree() {
+      const container = document.getElementById('canvas-container');
+      const w = container ? (container.offsetWidth || 400) : 400;
+      const groundY = getGroundY();
+
+      // Vùng an toàn: phía trên tránh HUD (~95px), hai bên lề (~20px)
+      const topSafeMargin = 95;
+      const sideMargin = 20;
+
+      const availW = Math.max(100, w - sideMargin * 2);
+      const availH = Math.max(100, groundY - topSafeMargin);
+
+      const bounds = getTreeBounds(treeRoot);
+      const scaleX = availW / bounds.width;
+      const scaleY = availH / bounds.height;
+      const fitZoom = Math.min(scaleX, scaleY);
+
+      // Căn chỉnh tỉ lệ zoom sao cho cây nằm TRỌN VẸN 100% trong khung hình phía trên box
+      defaultZoom = Math.max(0.35, Math.min(2.0, fitZoom));
+      zoomLevel = defaultZoom;
+
+      // Căn giữa ngang cây theo trọng tâm tán lá
+      const centerOffsetX = (bounds.left + bounds.right) / 2;
+      panX = -centerOffsetX * zoomLevel;
+      panY = 0;
+    }
+
+    // =========================================================================
+    // ZOOM IN / OUT WITH SCREEN-CENTER PIVOT INVARIANCE
+    // =========================================================================
+    function applyZoomAtCenter(newZoom) {
+      const clamped = Math.max(0.35, Math.min(3.0, newZoom));
+      if (Math.abs(clamped - zoomLevel) < 0.0001) return;
+
+      const container = document.getElementById('canvas-container');
+      const w = container ? (container.offsetWidth || 400) : 400;
+      const h = container ? (container.offsetHeight || 800) : 800;
+      const pivotX = w / 2;
+      const pivotY = h / 2;
+      const groundY = getGroundY();
+
+      const ratio = clamped / zoomLevel;
+      const dx = pivotX - (w / 2);
+      const dy = pivotY - groundY;
+
+      panX = dx - (dx - panX) * ratio;
+      panY = dy - (dy - panY) * ratio;
+      zoomLevel = clamped;
+    }
+
+    function zoomIn() {
+      applyZoomAtCenter(zoomLevel * 1.25);
+      playTone(650);
+    }
+
+    function zoomOut() {
+      applyZoomAtCenter(zoomLevel * 0.8);
+      playTone(520);
+    }
+
+    // =========================================================================
+    // REBUILD FRACTAL BRANCH TREE & PROGRESS HANDLING
+    // =========================================================================
+    function rebuildFractalTree(progressFraction = 1.0) {
+      if (typeof FractalBranchTree === 'undefined') return;
+
+      treeRoot = new FractalBranchTree({
+        initLength: currentTreeParams.initLength || 200,
+        branchAngle: currentTreeParams.branchAngle,
+        lengthDecay: currentTreeParams.lengthDecay,
+        initThickness: currentTreeParams.initThickness || 36,
+        thicknessDecay: currentTreeParams.thicknessDecay,
+        maxDepth: currentTreeParams.maxDepth || 9,
+        minBranchLength: currentTreeParams.minBranchLength || 15,
+        treeVariation: currentTreeParams.treeVariation,
+        leafType: currentTreeParams.leafType,
+        leafShape: currentTreeParams.leafShape,
+        treeType: currentTreeParams.treeType || 'sequential',
+        windStrength: currentTreeParams.windStrength,
+        colorTheme: currentTreeParams.colorTheme,
+        seed: currentTreeParams.seed,
+        maxFallingLeaves: 45,
+        maxFallingLeaflets: 75,
+        fallBranchProbability: 0.35
+      });
+
+      totalDuration = (treeRoot && typeof treeRoot.getTotalGrowthTime === 'function')
+        ? treeRoot.getTotalGrowthTime()
+        : 5.0;
+
+      applyProgress(progressFraction);
+      autoFitTree();
+      renderGeneticsHUD();
+    }
+
+    function formatRemainingTime(progress) {
+      if (progress >= 1.0) {
+        return { text: "Hoàn tất", isDone: true };
+      }
+      // Giả lập thời lượng tăng trưởng 24h
+      const totalSecs = 86400;
+      const remainSecs = Math.max(0, Math.round((1.0 - progress) * totalSecs));
+      const hours = Math.floor(remainSecs / 3600);
+      const mins = Math.floor((remainSecs % 3600) / 60);
+      if (hours > 0) {
+        return { text: `Còn lại ${hours}h ${mins}m`, isDone: false };
+      }
+      return { text: `Còn lại ${mins}m`, isDone: false };
+    }
+
+    function applyProgress(fraction) {
+      currentProgress = Math.max(0, Math.min(1.0, fraction));
+
+      // QUY ĐỊNH BẮT BUỘC: Khi cây đạt 100%, DỪNG PHÁT TRIỂN VĨNH VIỄN, KHÔNG MỌC LẠI TỪ ĐẦU!
+      if (currentProgress >= 1.0) {
+        currentProgress = 1.0;
+        isAutoPlaying = false;
+      }
+
+      if (treeRoot) {
+        if (currentProgress >= 1.0) {
+          treeRoot.animationTime = totalDuration + 5.0;
+        } else {
+          treeRoot.animationTime = currentProgress * totalDuration;
+        }
+        if (treeRoot.root && typeof treeRoot.root.updateTime === 'function') {
+          treeRoot.root.updateTime(treeRoot.animationTime, totalDuration);
+        } else if (typeof treeRoot.update === 'function') {
+          treeRoot.update(0);
+        }
+      }
+
+      updateUI();
+    }
+
+    function updateUI() {
+      const pct = Math.round(currentProgress * 100);
+      const trackEl = document.getElementById('groundProgressTrack');
+      const barEl = document.getElementById('groundProgressBar');
+      const timeBox = document.getElementById('growthTimeText');
+      const harvestBadge = document.getElementById('harvestSeedBadge');
+
+      if (currentProgress >= 1.0) {
+        // Cây mọc 100% thì ẩn hẳn thanh progress bar
+        if (trackEl) trackEl.style.display = 'none';
+        if (timeBox) {
+          timeBox.className = 'ground-time-countdown is-done';
+          timeBox.innerText = '✨ Đã trưởng thành';
+        }
+        // Hiển thị icon hạt giống tròn nhỏ xinh
+        if (harvestBadge) harvestBadge.style.display = 'flex';
+      } else {
+        if (trackEl) trackEl.style.display = 'block';
+        if (barEl) barEl.style.width = pct + '%';
+        if (timeBox) {
+          timeBox.className = 'ground-time-countdown';
+          const timeInfo = formatRemainingTime(currentProgress);
+          timeBox.innerText = `⏳ ${timeInfo.text}`;
+        }
+        if (harvestBadge) harvestBadge.style.display = 'none';
+      }
+    }
+
+    function renderGeneticsHUD() {
+      const shapeObj = ALL_LEAF_SHAPES.find(s => s.id === currentTreeParams.leafShape) || ALL_LEAF_SHAPES[0];
+      const trunkObj = ALL_TRUNK_THEMES.find(t => t.id === currentTreeParams.colorTheme) || ALL_TRUNK_THEMES[0];
+      const leafColorObj = ALL_LEAF_COLOR_PALETTES.find(p => p.id === currentTreeParams.leafType) || ALL_LEAF_COLOR_PALETTES[0];
+      const rarityCfg = RARITY_CONFIG[currentTreeParams.leafRarity] || RARITY_CONFIG.common;
+
+      // Top Badges HUD (Chỉ 2 badge: Độ hiếm ở trên, Đời cây ở dưới)
+      const rarityEl = document.getElementById('topRarityBadge');
+      if (rarityEl) {
+        rarityEl.className = `rarity-badge ${rarityCfg.badgeClass}`;
+        rarityEl.innerText = `${rarityCfg.icon} ${rarityCfg.name}`;
+      }
+
+      const genEl = document.getElementById('topGenBadge');
+      if (genEl) {
+        const g = currentTreeParams.generation || 0;
+        genEl.innerText = g === 0 ? 'P' : `F${g}`;
+      }
+
+      // Ground Soil Box Information (Tên cây cỡ thường in đậm, loại lá, màu lá, màu thân)
+      const nameEl = document.getElementById('treeDisplayName');
+      if (nameEl) nameEl.innerText = currentTreeParams.name;
+
+      const leafShapeEl = document.getElementById('specLeafShapeText');
+      if (leafShapeEl) leafShapeEl.innerText = shapeObj.name;
+
+      const leafColorDot = document.getElementById('specLeafColorDot');
+      if (leafColorDot) leafColorDot.style.background = currentTreeParams.colors[0];
+      const leafColorName = document.getElementById('specLeafColorName');
+      if (leafColorName) leafColorName.innerText = leafColorObj.label || leafColorObj.name;
+
+      const trunkColorDot = document.getElementById('specTrunkColorDot');
+      const trunkHex = (trunkObj.colors && trunkObj.colors[0]) ? trunkObj.colors[0] : '#2d2219';
+      if (trunkColorDot) trunkColorDot.style.background = trunkHex;
+      const trunkColorName = document.getElementById('specTrunkColorName');
+      if (trunkColorName) trunkColorName.innerText = trunkObj.label || trunkObj.name;
+    }
+
+    // =========================================================================
+    // HARVEST SEED GENERATION & NFC WRITING ENGINE (64-BYTE COMPLIANT)
+    // =========================================================================
+    function hexToRgb565(hexStr) {
+      if (!hexStr) return 0x07e0;
+      let c = parseInt(hexStr.replace('#', ''), 16);
+      let r = (c >> 16) & 0xff;
+      let g = (c >> 8) & 0xff;
+      let b = c & 0xff;
+      return ((r & 0xf8) << 8) | ((g & 0xfc) << 3) | (b >> 3);
+    }
+
+    function crc16Ccitt(buffer, len) {
+      let crc = 0xffff;
+      for (let i = 0; i < len; i++) {
+        crc ^= (buffer[i] << 8);
+        for (let j = 0; j < 8; j++) {
+          if (crc & 0x8000) {
+            crc = ((crc << 1) ^ 0x1021) & 0xffff;
+          } else {
+            crc = (crc << 1) & 0xffff;
+          }
+        }
+      }
+      return crc;
+    }
+
+    function buildChild64BytePayload(child) {
+      const buffer = new ArrayBuffer(64);
+      const view = new DataView(buffer);
+      const uint8 = new Uint8Array(buffer);
+
+      // Byte 0-1: Magic 'TR' (0x5452)
+      view.setUint16(0, 0x5452, false);
+
+      // Byte 2: Version 0x01
+      view.setUint8(2, 0x01);
+
+      // Byte 3: Flags (0x00 = Unplanted Seed)
+      view.setUint8(3, 0x00);
+
+      // Byte 4-7: Tree ID (uint32)
+      view.setUint32(4, child.treeId, false);
+
+      // Byte 8-15: Planted At (0 for seed)
+      view.setBigUint64(8, 0n, false);
+
+      // Byte 16-19: Growth Duration (seconds, uint32)
+      view.setUint32(16, child.growthDurationSecs || 86400, false);
+
+      // Byte 20: Leaf Shape Index (uint8) - DI TRUYỀN NGUYÊN BẢN TỪ CÂY MẸ
+      const leafIdx = Math.max(0, ALL_LEAF_SHAPES.findIndex(s => s.id === child.leafShape));
+      view.setUint8(20, leafIdx);
+
+      // Byte 21: Branch Angle (uint8, angle * 2)
+      view.setUint8(21, Math.min(255, Math.round(child.branchAngle * 2)));
+
+      // Byte 22: Length Factor (uint8, decay * 255)
+      view.setUint8(22, Math.min(255, Math.round(child.lengthDecay * 255)));
+
+      // Byte 23: Max Depth (uint8)
+      view.setUint8(23, child.maxDepth || 9);
+
+      // Byte 24-25: Trunk Color RGB565
+      const trunkColors = ALL_TRUNK_THEMES.find(t => t.id === child.colorTheme)?.colors || ['#2d2219'];
+      view.setUint16(24, hexToRgb565(trunkColors[0]), false);
+
+      // Byte 26-27: Leaf Color RGB565
+      const leafColors = ALL_LEAF_COLOR_PALETTES.find(c => c.id === child.leafType)?.colors || ['#34d399'];
+      view.setUint16(26, hexToRgb565(leafColors[0]), false);
+
+      // Byte 28-31: DNA Seed (uint32)
+      view.setUint32(28, child.dnaSeed, false);
+
+      // Byte 32: Generation (parent + 1)
+      view.setUint8(32, child.generation);
+
+      // Byte 33-36: Parent Tree ID
+      view.setUint32(33, child.parentTreeId, false);
+
+      // Byte 37-61: Reserved (0x00)
+      for (let i = 37; i < 62; i++) {
+        view.setUint8(i, 0x00);
+      }
+
+      // Byte 62-63: CRC-16 Checksum
+      const checksum = crc16Ccitt(uint8, 62);
+      view.setUint16(62, checksum, false);
+
+      return uint8;
+    }
+
+    let currentChildSeed = null;
+
+    // QUY TẮC DI TRUYỀN: Giữ lại thông số LOẠI LÁ, các thông số khác sinh ngẫu nhiên theo tỷ lệ quy định
+    function openHarvestNfcModal() {
+      // 1. DẠNG LÁ: DI TRUYỀN NGUYÊN BẢN TỪ CÂY MẸ
+      const childLeafShape = currentTreeParams.leafShape;
+      const parentGen = currentTreeParams.generation !== undefined ? currentTreeParams.generation : 0;
+      const childGen = parentGen + 1;
+      const parentId = currentTreeParams.treeId || 492810;
+      const childTreeId = Math.floor(randFloat(100000, 999999));
+      const childDnaSeed = Math.floor(randFloat(100000, 999999999));
+
+      // 2. MÀU LÁ: SINH NGẪU NHIÊN THEO TỶ LỆ ĐỘ HIẾM CỦA LOẠI LÁ ĐÓ
+      const leafColorResult = pickLeafColorForShape(childLeafShape);
+      const childLeafColorObj = ALL_LEAF_COLOR_PALETTES.find(p => p.id === leafColorResult.colorId) || ALL_LEAF_COLOR_PALETTES[0];
+
+      // 3. MÀU THÂN: SINH NGẪU NHIÊN TỪ THƯ VIỆN THÂN
+      const childTrunkObj = randChoice(ALL_TRUNK_THEMES);
+
+      // 4. CÁC THÔNG SỐ HÌNH HỌC KHÁC SINH NGẪU NHIÊN THEO QUY ĐỊNH
+      const childBranchAngle = Math.round(randFloat(16, 32));
+      const childLengthDecay = parseFloat(randFloat(0.70, 0.82).toFixed(2));
+      const childMaxDepth = Math.round(randFloat(8, 10));
+
+      currentChildSeed = {
+        treeId: childTreeId,
+        parentTreeId: parentId,
+        generation: childGen,
+        leafShape: childLeafShape,
+        leafType: childLeafColorObj.id,
+        colorTheme: childTrunkObj.id,
+        leafRarity: leafColorResult.rarity,
+        leafColors: childLeafColorObj.colors,
+        trunkColors: childTrunkObj.colors || ['#2d2219'],
+        branchAngle: childBranchAngle,
+        lengthDecay: childLengthDecay,
+        maxDepth: childMaxDepth,
+        growthDurationSecs: 86400,
+        dnaSeed: childDnaSeed,
+        name: generateTreeName(childTrunkObj, childLeafColorObj, ALL_LEAF_SHAPES.find(s => s.id === childLeafShape))
+      };
+
+      currentChildSeed.payload = buildChild64BytePayload(currentChildSeed);
+
+      // Cập nhật giao diện modal popup nhỏ giữa màn hình
+      const childNameEl = document.getElementById('harvestPopupChildName');
+      if (childNameEl) {
+        const baseName = (currentTreeParams.name.split('•')[0] || 'Cây Fractal').trim();
+        childNameEl.innerText = `${baseName} đời ${childGen === 1 ? '1' : childGen}`;
+      }
+
+      const statusLog = document.getElementById('nfcStatusLog');
+      if (statusLog) {
+        statusLog.innerText = 'Chạm thẻ NFC để thu hoạch hạt giống';
+      }
+
+      const modal = document.getElementById('harvestNfcModal');
+      if (modal) modal.style.display = 'block';
+      playTone(600);
+
+      // Tự động lắng nghe / ghi Web NFC nếu có
+      startHarvestNfcSession();
+    }
+
+    let nfcAbortController = null;
+
+    async function startHarvestNfcSession() {
+      if (!currentChildSeed) return;
+      const statusLog = document.getElementById('nfcStatusLog');
+
+      if (!('NDEFReader' in window)) {
+        if (statusLog) statusLog.innerText = 'Chạm thẻ NFC để thu hoạch hạt giống';
+        return;
+      }
+
+      try {
+        if (nfcAbortController) {
+          nfcAbortController.abort();
+        }
+        nfcAbortController = new AbortController();
+
+        const ndef = new NDEFReader();
+        if (statusLog) statusLog.innerText = '⏳ Đang chờ chạm thẻ NFC...';
+
+        await ndef.write({
+          records: [
+            {
+              recordType: "mime",
+              mediaType: "application/octet-stream",
+              data: currentChildSeed.payload
+            }
+          ]
+        }, { signal: nfcAbortController.signal });
+
+        if (statusLog) {
+          statusLog.innerText = `✅ Ghi thẻ NFC thành công!`;
+        }
+        playTone(880);
+        showToast(`🎉 Ghi thành công hạt giống F${currentChildSeed.generation} vào thẻ!`);
+        setTimeout(() => {
+          closeHarvestNfcModal();
+        }, 1500);
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        if (statusLog) statusLog.innerText = 'Chạm thẻ NFC để thu hoạch hạt giống';
+        console.warn('NFC Write notice:', err);
+      }
+    }
+
+    function closeHarvestNfcModal() {
+      if (nfcAbortController) {
+        nfcAbortController.abort();
+        nfcAbortController = null;
+      }
+      const modal = document.getElementById('harvestNfcModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function simulateNfcTap() {
+      if (!currentChildSeed) return;
+      const statusLog = document.getElementById('nfcStatusLog');
+      if (statusLog) statusLog.innerText = '✅ Đã nạp hạt giống vào thẻ!';
+      playTone(880);
+      showToast(`🎉 Đã thu hoạch hạt giống F${currentChildSeed.generation}!`);
+      setTimeout(() => {
+        closeHarvestNfcModal();
+      }, 1200);
+    }
+
+    function downloadChildBinaryPayload() {
+      if (!currentChildSeed) return;
+      const blob = new Blob([currentChildSeed.payload], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tree_seed_F${currentChildSeed.generation}_${currentChildSeed.treeId}.bin`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`💾 Đã tải file nhị phân 64-Byte (F${currentChildSeed.generation})`);
+      playTone(528);
+    }
+
+    function toggleScreenMode() {
+      document.body.classList.toggle('is-fullscreen');
+      setTimeout(() => {
+        windowResized();
+      }, 300);
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('toastPill');
+      document.getElementById('toastMsg').innerText = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.remove('show');
+      }, 2500);
+    }
+
+    // Parse URL query parameter (e.g., ?tree=sakura, ?progress=0.8, ?gen=0, ?id=492810)
+    function initTreeFromUrlParams() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const treeParam = params.get('tree') || params.get('shape') || params.get('leaf');
+        const genParam = params.get('gen') || params.get('generation');
+        const idParam = params.get('id') || params.get('treeId');
+        const progParam = params.get('progress');
+
+        if (genParam !== null && genParam !== undefined) {
+          currentTreeParams.generation = parseInt(genParam, 10) || 0;
+        }
+        if (idParam) {
+          currentTreeParams.treeId = parseInt(idParam, 10) || 492810;
+        }
+        if (progParam !== null && progParam !== undefined) {
+          currentProgress = Math.max(0, Math.min(1.0, parseFloat(progParam)));
+        }
+
+        if (treeParam) {
+          if (treeParam === 'sakura') {
+            currentTreeParams.leafShape = 'sakura_leaf';
+            currentTreeParams.leafType = 'sakura';
+            currentTreeParams.colorTheme = 'sakura';
+            currentTreeParams.colors = ['#fda4ba', '#f472b6', '#fce7f3'];
+          } else if (treeParam === 'willow') {
+            currentTreeParams.leafShape = 'willow';
+            currentTreeParams.leafType = 'emerald';
+            currentTreeParams.colorTheme = 'emerald';
+            currentTreeParams.colors = ['#10b981', '#34d399', '#059669'];
+          } else if (treeParam === 'autumn') {
+            currentTreeParams.leafShape = 'maple';
+            currentTreeParams.leafType = 'autumn';
+            currentTreeParams.colorTheme = 'autumn';
+            currentTreeParams.colors = ['#dc2626', '#ef4444', '#f97316'];
+          } else if (treeParam === 'eucalyptus') {
+            currentTreeParams.leafShape = 'eucalyptus_long';
+            currentTreeParams.leafType = 'eucalyptus';
+            currentTreeParams.colorTheme = 'eucalyptus';
+            currentTreeParams.colors = ['#7BA89A', '#98C9B9', '#4E7D6F'];
+          } else {
+            const foundShape = ALL_LEAF_SHAPES.find(s => s.id === treeParam);
+            if (foundShape) currentTreeParams.leafShape = foundShape.id;
+          }
+          const trunkObj = ALL_TRUNK_THEMES.find(t => t.id === currentTreeParams.colorTheme) || ALL_TRUNK_THEMES[0];
+          const leafColorObj = ALL_LEAF_COLOR_PALETTES.find(p => p.id === currentTreeParams.leafType) || ALL_LEAF_COLOR_PALETTES[0];
+          const shapeObj = ALL_LEAF_SHAPES.find(s => s.id === currentTreeParams.leafShape) || ALL_LEAF_SHAPES[0];
+          currentTreeParams.leafRarity = getLeafRarity(currentTreeParams.leafShape, currentTreeParams.leafType);
+          currentTreeParams.name = generateTreeName(trunkObj, leafColorObj, shapeObj);
+        }
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // P5.JS SETUP & ANIMATION LOOP
+    // =========================================================================
+    function setup() {
+      const container = document.getElementById('canvas-container');
+      const w = container.offsetWidth || 400;
+      const h = container.offsetHeight || 800;
+
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvas-container');
+
+      // CRITICAL: Explicitly configure p5 colorMode alpha max to 1.0
+      colorMode(RGB, 255, 255, 255, 1);
+
+      // Drag to Pan Support (Cây được di chuyển tự do bằng chuột)
+      cnv.elt.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragStartX = e.clientX - panX;
+        dragStartY = e.clientY - panY;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        panX = e.clientX - dragStartX;
+        panY = e.clientY - dragStartY;
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+
+      // Touch Drag to Pan Support (Cảm ứng 1 ngón di chuyển cây)
+      cnv.elt.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          dragStartX = e.touches[0].clientX - panX;
+          dragStartY = e.touches[0].clientY - panY;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isDragging) {
+          panX = e.touches[0].clientX - dragStartX;
+          panY = e.touches[0].clientY - dragStartY;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+          isDragging = false;
+        }
+      });
+
+      // Mouse Wheel Zoom Support
+      cnv.elt.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.12 : 0.89;
+        applyZoomAtCenter(zoomLevel * factor);
+      }, { passive: false });
+
+      // Touch Pinch-to-Zoom Support
+      let touchStartDist = 0;
+      let touchStartZoom = 1.0;
+      cnv.elt.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          isDragging = false;
+          touchStartDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          touchStartZoom = zoomLevel;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && touchStartDist > 0) {
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const ratio = dist / touchStartDist;
+          applyZoomAtCenter(touchStartZoom * ratio);
+        }
+      }, { passive: true });
+
+      // Initialize from URL query parameters if present, then build tree
+      initTreeFromUrlParams();
+      rebuildFractalTree(currentProgress);
+    }
+
+    // Starfield for starry night background
+    let detailStars = [];
+    function initDetailStars() {
+      detailStars = [];
+      let seed = 918273;
+      const prng = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+      const count = 85;
+      const maxY = height * 0.72;
+      for (let i = 0; i < count; i++) {
+        let rx = prng(), ry = prng(), rSpeed = prng(), rSize = prng(), rAlpha = prng();
+        let isLuminous = (i % 12 === 0);
+        let r = isLuminous ? 2.2 + rSize * 0.9 : 0.75 + rSize * 1.05;
+        detailStars.push({
+          x: 10 + rx * (width - 20),
+          y: 16 + Math.pow(ry, 1.3) * (maxY - 16),
+          r: r,
+          baseAlpha: 0.35 + rAlpha * 0.55,
+          speed: 0.7 + rSpeed * 1.8,
+          phase: (i * 1.618) % (2 * Math.PI),
+          isLuminous: isLuminous
+        });
+      }
+    }
+
+    function drawStarryNight(groundY) {
+      if (!detailStars || detailStars.length === 0) {
+        initDetailStars();
+      }
+      push();
+      noStroke();
+      let time = frameCount * 0.025;
+      for (let s of detailStars) {
+        if (s.y >= groundY - 5) continue;
+        let twinkle = 0.50 + 0.50 * Math.sin(time * s.speed + s.phase);
+        let a = s.baseAlpha * twinkle;
+        if (s.isLuminous) {
+          fill(224, 242, 254, a * 0.25 * 255);
+          ellipse(s.x, s.y, s.r * 5.6, s.r * 5.6);
+        }
+        fill(255, 255, 245, a * 255);
+        ellipse(s.x, s.y, s.r * 2, s.r * 2);
+        if (s.isLuminous) {
+          fill(255, 255, 255, a * 0.95 * 255);
+          ellipse(s.x, s.y, s.r * 0.9, s.r * 0.9);
+        }
+      }
+      pop();
+    }
+
+    function draw() {
+      clear();
+
+      // QUY CHUẨN: Gốc cây nằm ngay TRÊN mép box nền đất, không bị che khuất!
+      const groundY = getGroundY();
+
+      // Bầu trời đêm đầy sao tĩnh lặng & lung linh
+      drawStarryNight(groundY);
+
+      if (treeRoot) {
+        push();
+        // Camera Translate (Center + Pan, gốc cây nằm ngay trên mép box thông tin)
+        translate(width / 2 + panX, groundY + panY);
+        // Camera Zoom (Tỉ lệ auto-fit vừa vặn 100% khung hình phía trên box)
+        scale(zoomLevel);
+
+        // Vùng gò đất tự nhiên ôm sát gốc cây ngay trên mép box thông tin
+        noStroke();
+        // Lớp đất tối nền dưới
+        fill(18, 28, 22, 230);
+        ellipse(0, 12, width * 0.85, 34);
+        // Gò đất màu mỡ ôm gốc rễ
+        fill(28, 42, 34, 210);
+        ellipse(0, 8, width * 0.55, 20);
+        // Vạt rêu hữu cơ nhạt nhẹ sát gốc cây
+        fill(45, 68, 48, 140);
+        ellipse(0, 4, width * 0.28, 12);
+
+        // Initial tilt of the trunk based on noise for organic asymmetry
+        if (currentTreeParams.treeVariation > 0 && typeof noise === 'function') {
+          let initTilt = (noise(99.9) - 0.5) * 2 * radians(15) * currentTreeParams.treeVariation;
+          rotate(initTilt);
+        }
+
+        // Harmonic Wind Sway
+        const time = frameCount * 0.015;
+        treeRoot.draw(time);
+        pop();
+      }
+
+      // QUY ĐỊNH: Nếu auto-play lớn đến 100%, DỪNG PHÁT TRIỂN VĨNH VIỄN, KHÔNG RESET MỌC LẠI
+      if (isAutoPlaying && treeRoot) {
+        const dt = (1 / 60) * 1.0;
+        treeRoot.update(dt);
+        currentProgress = Math.min(1.0, treeRoot.animationTime / totalDuration);
+        if (currentProgress >= 1.0) {
+          currentProgress = 1.0;
+          isAutoPlaying = false;
+        }
+        updateUI();
+      }
+    }
+
+    function windowResized() {
+      const container = document.getElementById('canvas-container');
+      if (container) {
+        resizeCanvas(container.offsetWidth, container.offsetHeight);
+        autoFitTree();
+      }
+    }
+  </script>
+</body>
+</html>

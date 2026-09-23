@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Khu Vườn Của Tôi - Garden Dashboard | Fractal Tree NFC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f1412;
+      --bg-card: #18221e;
+      --bg-elevated: #21302b;
+      --accent-green: #4ade80;
+      --accent-gold: #fbbf24;
+      --accent-sakura: #f472b6;
+      --accent-maple: #ef4444;
+      --text-main: #f0fdf4;
+      --text-muted: #86a397;
+      --border-subtle: rgba(74, 222, 128, 0.15);
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #080b0a;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 412px;
+      height: 860px;
+      background: var(--bg-dark);
+      border-radius: 46px;
+      border: 8px solid #243029;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 115px;
+      height: 28px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+    }
+    .status-bar {
+      height: 48px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 90;
+    }
+    .badge-offline {
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: var(--accent-green);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 8px 84px;
+    }
+    .content-scroll::-webkit-scrollbar { display: none; }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Environmental Weather Bar */
+    .env-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .env-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .env-icon {
+      font-size: 16px;
+    }
+    .env-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .env-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .env-lbl {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .env-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Filter Tabs */
+    .tab-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+    .tab-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-pill.active {
+      color: #fff;
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    /* Tree Card Grid - 2 Equal Columns Optimized for Viewport */
+    .tree-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .tree-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .tree-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+    .tree-card.gold-glow {
+      border-color: rgba(251, 191, 36, 0.4);
+      background: linear-gradient(135deg, #18241d, #251d12);
+    }
+
+    .tree-preview {
+      width: 100%;
+      height: 118px;
+      background: #0d1411;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .card-mini-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Fan Spread Container for < 10% trees */
+    .fan-spread-box {
+      width: 80px;
+      height: 70px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .fan-leaf {
+      position: absolute;
+      bottom: 6px;
+      transform-origin: bottom center;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+    }
+    .fan-leaf-left {
+      transform: rotate(-32deg) translateY(-2px);
+    }
+    .fan-leaf-center {
+      transform: rotate(0deg) translateY(-6px);
+      z-index: 2;
+    }
+    .fan-leaf-right {
+      transform: rotate(32deg) translateY(-2px);
+    }
+    .fan-spread-box:hover .fan-leaf-left {
+      transform: rotate(-44deg) translateY(-4px) scale(1.08);
+    }
+    .fan-spread-box:hover .fan-leaf-center {
+      transform: rotate(0deg) translateY(-10px) scale(1.12);
+    }
+    .fan-spread-box:hover .fan-leaf-right {
+      transform: rotate(44deg) translateY(-4px) scale(1.08);
+    }
+
+    .tree-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .tree-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .progress-track {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 2px 0 2px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+      border-radius: 6px;
+    }
+    .tree-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .badge-f1 {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(251, 191, 36, 0.22);
+      border: 1px solid rgba(251, 191, 36, 0.6);
+      color: var(--accent-gold);
+      font-size: 8px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      z-index: 10;
+      animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+
+    /* =========================================
+       EMPTY GARDEN STATE (WHEN NO TREES PLANTED)
+       ========================================= */
+    .empty-garden-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 30px 10px 20px;
+      animation: fadeIn 0.3s ease;
+    }
+    .empty-garden-view.active {
+      display: flex;
+    }
+
+    .empty-space-dome {
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle at 50% 50%, #16241d, #0b110e);
+      border-radius: 50%;
+      border: 1px dashed var(--border-subtle);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+      box-shadow: 0 0 40px rgba(74, 222, 128, 0.08);
+    }
+
+    /* Ambient Orbit Ring */
+    .orbit-ring {
+      position: absolute;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      border: 1px solid rgba(74, 222, 128, 0.15);
+      animation: rotateOrbit 16s linear infinite;
+    }
+    @keyframes rotateOrbit {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .orbit-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-green);
+      position: absolute;
+      top: -3px; left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Morphing Central Leaf */
+    .morph-leaf-wrapper {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      animation: floatLeaf 3.5s ease-in-out infinite alternate;
+    }
+    @keyframes floatLeaf {
+      0% { transform: translateY(0px) rotate(-3deg) scale(0.96); }
+      100% { transform: translateY(-10px) rotate(4deg) scale(1.04); }
+    }
+    #morphingLeafSvg {
+      width: 64px;
+      height: 64px;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      filter: drop-shadow(0 0 18px currentColor);
+    }
+
+    .empty-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .empty-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 280px;
+      margin-bottom: 8px;
+    }
+
+    .morph-info-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-green);
+      margin-bottom: 28px;
+      transition: color 0.4s;
+    }
+
+    .btn-plant-large {
+      width: 100%;
+      max-width: 320px;
+      padding: 16px;
+      background: linear-gradient(135deg, #22c55e, #15803d);
+      color: #fff;
+      border-radius: 20px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-plant-large:active { transform: scale(0.97); }
+
+    /* Floating NFC Button */
+    .fab-nfc {
+      position: absolute;
+      bottom: 86px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #22c55e, #15803d);
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      text-decoration: none;
+      z-index: 70;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fab-nfc:active { transform: scale(0.92); }
+    .fab-nfc svg { width: 28px; height: 28px; stroke: #fff; fill: none; }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 72px;
+      background: rgba(15, 20, 18, 0.9);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px 8px;
+      z-index: 80;
+    }
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 12px;
+    }
+    .nav-tab.active { color: var(--accent-green); }
+    .nav-tab svg { width: 22px; height: 22px; stroke-width: 2; }
+  </style>
+</head>
+<body>
+
+  <div class="phone-frame">
+    <div class="notch"></div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>12:45</span>
+      <div class="badge-offline">
+        <div class="badge-dot"></div>
+        <span>OFFLINE-FIRST</span>
+      </div>
+    </div>
+
+    <!-- Content Scroll -->
+    <div class="content-scroll">
+      <div class="header">
+        <div class="header-info">
+          <h1>Khu Vườn Zen</h1>
+          <p>Có 3 cây trong khu vườn</p>
+        </div>
+        <!-- Toggle Demo View -->
+        <button class="btn-toggle-demo" onclick="toggleViewMode()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M12 4v16"/></svg>
+          <span id="btnViewLabel">Xem Vườn Trống</span>
+        </button>
+      </div>
+
+      <!-- VIEW 1: ACTIVE GARDEN WITH TREES -->
+      <div id="viewActiveGarden">
+        <div class="tree-list">
+
+          <!-- TREE 1: Sakura (6% < 10%) -> Shows 3 Sakura Leaves in Fan-Spread! -->
+          <a href="02-tree-detail.html?tree=sakura" class="tree-card">
+            <div class="tree-preview">
+              <!-- Fan Spread of 3 Sakura Leaves in 3 Genetic Shades -->
+              <div class="fan-spread-box" title="Cây < 10%: Hiển thị 3 lá rẻ quạt hình dạng lá Anh Đào từ hạt giống">
+                <!-- Leaf 1 (Left - Tilt -32deg, Color Shade 1) -->
+                <svg class="fan-leaf fan-leaf-left" width="28" height="28" viewBox="0 0 24 24">
+                  <path d="M12 2.5c2.5 3 5 4.5 4.5 8s-3.5 5.5-4.5 9c-1-3.5-4-5.5-4.5-9s2-5 4.5-8z" fill="#fda4ba" opacity="0.9"/>
+                </svg>
+                <!-- Leaf 2 (Center - Tilt 0deg, Color Shade 2) -->
+                <svg class="fan-leaf fan-leaf-center" width="34" height="34" viewBox="0 0 24 24">
+                  <path d="M12 2.5c2.5 3 5 4.5 4.5 8s-3.5 5.5-4.5 9c-1-3.5-4-5.5-4.5-9s2-5 4.5-8z" fill="#f472b6"/>
+                </svg>
+                <!-- Leaf 3 (Right - Tilt 32deg, Color Shade 3) -->
+                <svg class="fan-leaf fan-leaf-right" width="28" height="28" viewBox="0 0 24 24">
+                  <path d="M12 2.5c2.5 3 5 4.5 4.5 8s-3.5 5.5-4.5 9c-1-3.5-4-5.5-4.5-9s2-5 4.5-8z" fill="#db2777" opacity="0.9"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="tree-info">
+              <div class="tree-name">Mầm Anh Đào</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 6%; background: linear-gradient(90deg, #ec4899, #f472b6);"></div>
+              </div>
+              <div class="tree-meta">
+                <span>Tiến trình: <strong>6%</strong></span>
+                <span>Còn 7 ngày</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- TREE 2: Oak (45% >= 10%) -> Reveals Fractal Tree Branches! -->
+          <a href="02-tree-detail.html?tree=emerald" class="tree-card">
+            <div class="tree-preview">
+              <canvas class="card-mini-canvas" id="canvasOak" width="140" height="114" title="Cây >= 10%: Hiển thị cấu trúc cây đa phân tự nhiên"></canvas>
+            </div>
+            <div class="tree-info">
+              <div class="tree-name">Cổ Thụ Lục Bảo</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 45%;"></div>
+              </div>
+              <div class="tree-meta">
+                <span>Tiến trình: <strong>45%</strong></span>
+                <span>Còn 4 ngày</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- TREE 3: Willow (88% >= 10%) -> Gravity Verlet Willow! -->
+          <a href="02-tree-detail.html?tree=willow" class="tree-card">
+            <div class="tree-preview">
+              <canvas class="card-mini-canvas" id="canvasWillow" width="140" height="114" title="Thanh Liễu Trọng Lực: Mô phỏng vật lý chuỗi hạt Verlet"></canvas>
+            </div>
+            <div class="tree-info">
+              <div class="tree-name">Thanh Liễu Trọng Lực</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 88%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
+              </div>
+              <div class="tree-meta">
+                <span>Tiến trình: <strong>88%</strong></span>
+                <span>Còn 14 giờ</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- TREE 4: Autumn Maple (100% Mature & Has Seed) -->
+          <a href="02-tree-detail.html?tree=autumn" class="tree-card gold-glow">
+            <div class="badge-f1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              HẠT F1
+            </div>
+            <div class="tree-preview">
+              <canvas class="card-mini-canvas" id="canvasMaple" width="140" height="114" title="Cây 100%: Hoàn chỉnh đa phân, rụng hạt F1"></canvas>
+            </div>
+            <div class="tree-info">
+              <div class="tree-name">Phong Đỏ Hoàng Gia</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24);"></div>
+              </div>
+              <div class="tree-meta">
+                <span style="color: var(--accent-gold); font-weight: 700;">100% Trưởng thành</span>
+                <span style="color: var(--accent-gold);">Nhận hạt</span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- VIEW 2: EMPTY STATE (WHEN NO TREES PLANTED YET) -->
+      <div id="viewEmptyGarden" class="empty-garden-view">
+        <div class="empty-space-dome">
+          <div class="orbit-ring">
+            <div class="orbit-dot"></div>
+          </div>
+          <div class="morph-leaf-wrapper">
+            <!-- Dynamic Morphing Leaf Shape SVG -->
+            <svg id="morphingLeafSvg" viewBox="0 0 24 24" style="color: #4ade80;">
+              <path id="leafPath" d="M12 2C7 6 4 11 5 16c1 5 6 6 7 6s6-1 7-6c1-5-2-10-7-14z" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+
+        <h2 class="empty-title">Khu Vườn Đang Để Trống</h2>
+        <p class="empty-desc">Không gian tĩnh tại đang chờ hạt mầm đầu tiên. Hãy áp thẻ NFC vào lưng máy để bắt đầu gieo mầm.</p>
+
+        <div class="morph-info-pill" id="morphPill">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
+          <span id="morphLeafName">Lá Sồi Cổ Thụ (Oak Leaf)</span>
+        </div>
+
+        <a href="05-nfc-radar-modal.html?mode=plant" class="btn-plant-large">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Trồng Cây Mới Bằng Thẻ NFC
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Floating NFC Button -->
+    <a href="05-nfc-radar-modal.html?mode=plant" class="fab-nfc" title="Quét thẻ NFC">
+      <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </a>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+      <a href="01-garden-dashboard.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Vườn Cây</span>
+      </a>
+      <a href="03-archive-gallery.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        <span>Nhà Kính</span>
+      </a>
+      <a href="04-settings-guide.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Cài Đặt</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Toggle View Mode (Active Garden vs Empty State Demo)
+    let isShowingEmpty = false;
+    function toggleViewMode() {
+      isShowingEmpty = !isShowingEmpty;
+      const vActive = document.getElementById('viewActiveGarden');
+      const vEmpty = document.getElementById('viewEmptyGarden');
+      const label = document.getElementById('btnViewLabel');
+
+      if (isShowingEmpty) {
+        vActive.style.display = 'none';
+        vEmpty.classList.add('active');
+        label.innerText = 'Xem Vườn Có Cây';
+      } else {
+        vActive.style.display = 'block';
+        vEmpty.classList.remove('active');
+        label.innerText = 'Xem Vườn Trống';
+      }
+    }
+
+    // =========================================
+    // PERIODIC LEAF MORPHING FOR EMPTY STATE
+    // =========================================
+    const leafCatalog = [
+      {
+        name: "Lá Đỉnh Nhọn / Cổ Thụ (Pointed Leaf)",
+        path: "M12 2C7 6 4 11 5 16c1 5 6 6 7 6s6-1 7-6c1-5-2-10-7-14z",
+        color: "#4ade80"
+      },
+      {
+        name: "Thanh Liễu Trọng Lực (Willow Strand)",
+        path: "M12 2c3 4 5 9 3 13-1.5 3-4 6-3 7-1-1-3-4-2-7 1-4 0-8 2-13z",
+        color: "#34d399"
+      },
+      {
+        name: "Bạch Đàn Dài (Long Eucalyptus)",
+        path: "M12 2c4 5 6 11 3 16-2 3-5 5-7 4-1-2 1-7 4-12 1-3 0-6 0-8z",
+        color: "#2dd4bf"
+      },
+      {
+        name: "Khuynh Diệp Đồng Tiền (Round Eucalyptus)",
+        path: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
+        color: "#98c9b9"
+      },
+      {
+        name: "Cánh Hoa Anh Đào (Sakura Blossom)",
+        path: "M12 2.5c2.5 3 5 4.5 4.5 8s-3.5 5.5-4.5 9c-1-3.5-4-5.5-4.5-9s2-5 4.5-8z",
+        color: "#f472b6"
+      },
+      {
+        name: "Lá Phong 5 Khía (Maple 5-Point)",
+        path: "M12 2l2 4 4-2-1.5 5 4.5 1-3.5 3.5 2 4.5-5-2-2.5 3-2.5-3-5 2 2-4.5-3.5-3.5 4.5-1-1.5-5 4 2 2-4z",
+        color: "#ef4444"
+      },
+      {
+        name: "Lá Ngân Hạnh Rẻ Quạt (Ginkgo)",
+        path: "M12 21c0-4 1-8 4-11 2-2 5-3 5-5 0-2-3-3-9-3s-9 1-9 3c0 2 3 3 5 5 3 3 4 7 4 11z",
+        color: "#fbbf24"
+      },
+      {
+        name: "Cổ Tùng La Hán (Tung Lahan)",
+        path: "M12 2c2 3 3 8 2 12s-3 6-4 8c-1-2-3-4-2-8s2-9 4-12z",
+        color: "#059669"
+      },
+      {
+        name: "Lá Bồ Đề Tâm Nguyệt (Bodhi Leaf)",
+        path: "M12 2c-3 5-7 7-6 12 1 4 4 6 6 8 2-2 5-4 6-8 1-5-3-7-6-12z",
+        color: "#86efac"
+      },
+      {
+        name: "Lá Thông 7 Kim (Pine Needles)",
+        path: "M12 2L10 10l-6 3 6 1-1 8 3-7 3 7-1-8 6-1-6-3L12 2z",
+        color: "#22c55e"
+      }
+    ];
+
+    let currentLeafIndex = 0;
+    const leafSvg = document.getElementById('morphingLeafSvg');
+    const leafPath = document.getElementById('leafPath');
+    const leafNameEl = document.getElementById('morphLeafName');
+    const morphPill = document.getElementById('morphPill');
+
+    function morphNextLeaf() {
+      currentLeafIndex = (currentLeafIndex + 1) % leafCatalog.length;
+      const item = leafCatalog[currentLeafIndex];
+
+      // Morph animation
+      leafSvg.style.transform = 'scale(0.8) rotate(15deg)';
+      leafSvg.style.opacity = '0.3';
+
+      setTimeout(() => {
+        leafPath.setAttribute('d', item.path);
+        leafSvg.style.color = item.color;
+        morphPill.style.color = item.color;
+        leafNameEl.innerText = item.name;
+
+        leafSvg.style.transform = 'scale(1) rotate(0deg)';
+        leafSvg.style.opacity = '1';
+      }, 300);
+    }
+
+    // Switch leaf every 2.6 seconds
+    setInterval(morphNextLeaf, 2600);
+
+    // =========================================================
+    // MINI MULTI-BRANCHING FRACTAL RENDERER FOR DASHBOARD CARDS
+    // =========================================================
+    function drawMiniFractalTree(canvasId, speciesType, progressVal) {
+      const c = document.getElementById(canvasId);
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const configs = {
+        emerald: {
+          shape: 'pointed',
+          colors: ['#34d399', '#6ee7b7', '#059669'],
+          trunk: '#78350f',
+          maxDepth: 5,
+          branchAngle: 23 * Math.PI / 180,
+          decay: 0.74
+        },
+        willow: {
+          shape: 'willow',
+          colors: ['#10b981', '#34d399', '#6ee7b7'],
+          trunk: '#1e2922',
+          maxDepth: 5,
+          branchAngle: 28 * Math.PI / 180,
+          decay: 0.76
+        },
+        autumn: {
+          shape: 'maple',
+          colors: ['#dc2626', '#ef4444', '#f97316'],
+          trunk: '#451a03',
+          maxDepth: 5,
+          branchAngle: 25 * Math.PI / 180,
+          decay: 0.76
+        }
+      };
+
+      const cfg = configs[speciesType] || configs.emerald;
+      const startX = w / 2;
+      const startY = h - 6;
+
+      // Base soil
+      ctx.fillStyle = '#213028';
+      ctx.beginPath();
+      ctx.ellipse(startX, startY + 2, 28, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const scale = Math.max(0, Math.min(1.0, (progressVal - 0.10) / 0.90)); // Scaled from 10% to 100%
+      const initLen = 32 * (0.6 + scale * 0.4);
+      const initThick = 5.5 * (0.6 + scale * 0.4);
+
+      function drawNode(x, y, len, angle, depth, thick, id) {
+        const endX = x + len * Math.cos(angle);
+        const endY = y + len * Math.sin(angle);
+
+        ctx.strokeStyle = cfg.trunk;
+        ctx.lineWidth = Math.max(1.2, thick);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        if (depth <= 1) {
+          // Terminal leaf
+          const color = cfg.colors[id % cfg.colors.length];
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          if (cfg.shape === 'maple') {
+            ctx.arc(endX, endY, 3.8, 0, Math.PI * 2);
+          } else if (cfg.shape === 'willow') {
+            // Draw downward weeping willow strand
+            ctx.ellipse(endX, endY + 4, 1.8, 6.0, 0.1, 0, Math.PI * 2);
+          } else {
+            ctx.ellipse(endX, endY, 2.5, 4.2, angle, 0, Math.PI * 2);
+          }
+          ctx.fill();
+          return;
+        }
+
+        // Multi-branching 3-way or 2-way
+        const is3Way = (id % 2 === 0);
+        // Left
+        drawNode(endX, endY, len * cfg.decay, angle - cfg.branchAngle, depth - 1, thick * 0.72, id * 3 + 1);
+        // Center
+        if (is3Way) {
+          drawNode(endX, endY, len * cfg.decay * 0.88, angle + 0.04, depth - 1, thick * 0.65, id * 3 + 2);
+        }
+        // Right
+        drawNode(endX, endY, len * cfg.decay, angle + cfg.branchAngle, depth - 1, thick * 0.72, id * 3 + 3);
+      }
+
+      drawNode(startX, startY, initLen, -Math.PI / 2, cfg.maxDepth, initThick, 0);
+
+      // If 100% mature, add glowing golden seed
+      if (progressVal >= 1.0) {
+        ctx.fillStyle = '#fbbf24';
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(startX + 12, startY - 38, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // Render tree cards on load
+    window.addEventListener('DOMContentLoaded', () => {
+      drawMiniFractalTree('canvasOak', 'emerald', 0.45);
+      drawMiniFractalTree('canvasWillow', 'willow', 0.88);
+      drawMiniFractalTree('canvasMaple', 'autumn', 1.0);
+    });
+    // also trigger immediately
+    drawMiniFractalTree('canvasOak', 'emerald', 0.45);
+    drawMiniFractalTree('canvasWillow', 'willow', 0.88);
+    drawMiniFractalTree('canvasMaple', 'autumn', 1.0);
+  </script>
+</body>
+</html>

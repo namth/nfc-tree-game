@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Các Modal & Tương Tác Phần Cứng NFC | Fractal Tree NFC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f1412;
+      --bg-card: #18221e;
+      --bg-elevated: #21302b;
+      --accent-green: #4ade80;
+      --accent-gold: #fbbf24;
+      --text-main: #f0fdf4;
+      --text-muted: #86a397;
+      --border-subtle: rgba(74, 222, 128, 0.15);
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #080b0a;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 412px;
+      height: 860px;
+      background: var(--bg-dark);
+      border-radius: 46px;
+      border: 8px solid #243029;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 115px;
+      height: 28px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+    }
+    .status-bar {
+      height: 48px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 90;
+    }
+
+    .content-scroll {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .demo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
+    }
+    .demo-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.3px;
+      margin-bottom: 8px;
+    }
+    .demo-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .btn-test {
+      width: 100%;
+      min-height: 48px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      padding: 14px;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+    .btn-test:hover {
+      background: rgba(74, 222, 128, 0.2);
+      border-color: var(--accent-green);
+    }
+    .btn-test.warning:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+
+    /* Backdrop */
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+    }
+    .modal-overlay.active { display: flex; }
+
+    /* Modal A: NFC Bottom Sheet */
+    .sheet {
+      width: 100%;
+      background: #131c18;
+      border-top: 1px solid var(--border-subtle);
+      border-radius: 32px 32px 0 0;
+      padding: 24px 20px 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .handle {
+      width: 40px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    /* Radar Waves */
+    .radar-box {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .radar-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--accent-green);
+      opacity: 0;
+      animation: radarPulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    .radar-ring:nth-child(2) { animation-delay: 0.6s; }
+    .radar-ring:nth-child(3) { animation-delay: 1.2s; }
+    @keyframes radarPulse {
+      0% { transform: scale(0.3); opacity: 0.85; }
+      100% { transform: scale(1.15); opacity: 0; }
+    }
+    .radar-center {
+      width: 58px;
+      height: 58px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--accent-green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-green);
+      z-index: 2;
+    }
+
+    .sheet-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .sheet-sub { font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.4; max-width: 280px; margin-bottom: 20px; }
+
+    /* Modal B: Center Dialog (Success / Warning) */
+    .center-dialog {
+      width: 90%;
+      max-width: 330px;
+      background: #17231e;
+      border: 1px solid var(--border-subtle);
+      border-radius: 28px;
+      padding: 24px;
+      margin: auto;
+      text-align: center;
+      animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .dialog-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-success {
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+    }
+    .icon-warning {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    .dialog-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .dialog-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; }
+    .btn-dialog {
+      width: 100%;
+      padding: 13px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent-green);
+      color: #000;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="phone-frame">
+    <div class="notch"></div>
+
+    <div class="status-bar">
+      <span>12:45</span>
+      <span>MODAL SYSTEM</span>
+    </div>
+
+    <div class="content-scroll">
+      <div class="demo-card">
+        <h2 class="demo-title">Thành Phần Nổi & Modal</h2>
+        <p class="demo-desc">Bấm các nút dưới đây để kiểm thử trực tiếp các trạng thái quét NFC và cảnh báo hệ thống:</p>
+
+        <button class="btn-test" onclick="openModal('modalRadar')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          Mở Sóng Quét NFC (Radar Bottom Sheet)
+        </button>
+
+        <button class="btn-test" onclick="openModal('modalSuccess')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Mở Chúc Mừng Gieo Mầm Thành Công
+        </button>
+
+        <button class="btn-test warning" onclick="openModal('modalWarning')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Mở Cảnh Báo Lệch Giờ Máy (Anti-Tamper)
+        </button>
+
+        <div style="margin-top: 20px;">
+          <a href="01-garden-dashboard.html" style="color: var(--accent-green); font-size: 12px; text-decoration: none; font-weight: 600;">← Quay lại Khu Vườn Chính</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL A: NFC RADAR SHEET -->
+    <div id="modalRadar" class="modal-overlay">
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="radar-box">
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-center">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </div>
+        </div>
+        <div class="sheet-title">Sẵn Sàng Quét Thẻ NFC</div>
+        <div class="sheet-sub">Hãy áp thẻ NFC hạt giống sát vào lưng điện thoại gần cụm camera và giữ yên...</div>
+
+        <button class="btn-test" style="background:var(--accent-green); color:#000;" onclick="switchModal('modalRadar', 'modalSuccess')">
+          ✨ Giả Lập: Quét Thẻ Thành Công
+        </button>
+        <button class="btn-test btn-outline" onclick="closeModals()">Hủy Bỏ</button>
+      </div>
+    </div>
+
+    <!-- MODAL B: SUCCESS DIALOG -->
+    <div id="modalSuccess" class="modal-overlay" style="align-items:center;">
+      <div class="center-dialog">
+        <div class="dialog-icon icon-success">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="dialog-title">Gieo Mầm Thành Công!</div>
+        <div class="dialog-text">Mầm Cây Sồi Cổ Thụ đã được ghi nhận vào thẻ NFC và nảy mầm vào Khu Vườn của bạn.<br><br>Thời gian sinh trưởng: <strong>7 Ngày</strong>.</div>
+        <a href="01-garden-dashboard.html" class="btn-dialog btn-primary" style="display:block; text-decoration:none;">Vào Khu Vườn Ngay</a>
+      </div>
+    </div>
+
+    <!-- MODAL C: ANTI-TAMPER WARNING DIALOG -->
+    <div id="modalWarning" class="modal-overlay" style="align-items:center;">
+      <div class="center-dialog">
+        <div class="dialog-icon icon-warning">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="dialog-title">Thời Gian Bị Lệch</div>
+        <div class="dialog-text">Hệ thống phát hiện thời gian trên điện thoại bị chỉnh sửa bất thường so với đồng hồ phần cứng.<br><br>Vui lòng bật chế độ <strong>"Đặt giờ tự động"</strong> trong Cài Đặt điện thoại để cây tiếp tục lớn!</div>
+        <button class="btn-dialog btn-outline" onclick="closeModals()">Tôi Đã Hiểu</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function openModal(id) {
+      closeModals();
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    function closeModals() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+    function switchModal(fromId, toId) {
+      closeModal(fromId);
+      setTimeout(() => openModal(toId), 150);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Trình khám phá và tạo cây Fractal tương tác sử dụng thư viện p5.js. Điều chỉnh các thông số góc, độ dài, độ sâu, gió thổi và chủ đề màu sắc trực quan.">
+  <title>Fractal Tree Explorer | p5.js</title>
+  
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css?v=tamarind-oval-v11">
+  
+  <!-- p5.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+</head>
+<body>
+  <main class="app-container">
+    <!-- Canvas parent container where p5.js will inject the canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Interactive Sidebar -->
+    <aside class="control-panel">
+      <header class="panel-header">
+        <h1>FRACTAL TREE</h1>
+        <p class="subtitle">p5.js Visualizer</p>
+      </header>
+
+      <div class="scroll-area">
+        <!-- Section: Growth Simulation -->
+        <section class="control-group">
+          <h2>Quá trình Phát triển</h2>
+          
+          <div class="control-item">
+            <div class="button-group-row">
+              <button id="playBtn" class="btn btn-primary btn-growth">
+                <svg id="playIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="hidden"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="pauseIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                <span id="playText">Tạm dừng</span>
+              </button>
+              <button id="restartBtn" class="btn btn-secondary btn-growth">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Trồng lại</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="control-item">
+            <div class="label-wrapper">
+              <label for="growthSpeed">Tốc độ giả lập</label>
+              <span class="value-display" id="growthSpeed-val">1.0x</span>
+            </div>
+            <input type="range" id="growthSpeed" min="0.2" max="2.0" value="1.0" step="0.1">
+          </div>
+
+          <div class="control-item">
+            <div class="label-wrapper">
+              <label>Tuổi của cây (Tiến trình)</label>
+              <span class="value-display" id="growthAge-val">0.0s</span>
+            </div>
+            <div class="progress-bar-container">
+              <div id="growthProgressBar" class="progress-bar"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Tree Parameters -->
+        <section class="control-group">
+          <h2>Thông số Cây</h2>
+          
+          <div class="control-item">
+            <div class="label-wrapper">
+              <label for="treeTypeSelect">Kiểu Phân Nhánh</label>
+            </div>
+            <div class="select-wrapper">
+              <select id="treeTypeSelect">
+                <option value="sequential" selected>Cây Phân Nhánh (Tuần Tự)</option>
+                <option value="barnsley-fern">Dương Xỉ Barnsley</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="control-item">
+            <div class="label-wrapper">
+              <label for="initLength">Chiều dài thân chính</label>
+              <span class="value-display" id="initLength-val">200px</span>
+            </div>
+            <input type="range" id="initLength" min="150" max="300" value="200" step="5">
+          </div>
+
+          <div class="control-item tree-only">
+            <div class="label-wrapper">
+              <label for="branchAngle">Góc rẽ nhánh</label>
+              <span class="value-display" id="branchAngle-val">20°</span>
+            </div>
+            <input type="range" id="branchAngle" min="12" max="36" value="20" step="1">
+          </div>
+
+          <div class="control-item tree-only">
+            <div class="label-wrapper">
+              <label for="lengthDecay">Tỉ lệ giảm cành</label>
+              <span class="value-display" id="lengthDecay-val">0.75</span>
+            </div>
+            <input type="range" id="lengthDecay" min="0.68" max="0.86" value="0.75" step="0.01">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="initThickness">Độ dày gốc lá</label>
+              <span class="value-display" id="initThickness-val">4px</span>
+            </div>
+            <input type="range" id="initThickness" min="1" max="6" value="4" step="0.5">
+          </div>
+
+          <div class="control-item tree-only">
+            <div class="label-wrapper">
+              <label for="thicknessDecay">Tỉ lệ giảm độ dày</label>
+              <span class="value-display" id="thicknessDecay-val">0.66</span>
+            </div>
+            <input type="range" id="thicknessDecay" min="0.45" max="0.66" value="0.66" step="0.01">
+          </div>
+
+          <div class="control-item">
+            <div class="label-wrapper">
+              <label for="maxDepth">Độ sâu đệ quy</label>
+              <span class="value-display" id="maxDepth-val">9</span>
+            </div>
+            <input type="range" id="maxDepth" min="8" max="12" value="9" step="1">
+          </div>
+
+          <div class="control-item">
+            <div class="label-wrapper">
+              <label for="treeVariation">Độ biến dị (Sai số)</label>
+              <span class="value-display" id="treeVariation-val">0.80</span>
+            </div>
+            <input type="range" id="treeVariation" min="0.65" max="1.2" value="0.80" step="0.05">
+          </div>
+
+          <!-- Fern Specific Sliders -->
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernFrondCount">Số lượng lá từ gốc</label>
+              <span class="value-display" id="fernFrondCount-val">5</span>
+            </div>
+            <input type="range" id="fernFrondCount" min="1" max="8" value="5" step="1">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernSpreadAngle">Góc xòe bụi lá</label>
+              <span class="value-display" id="fernSpreadAngle-val">45°</span>
+            </div>
+            <input type="range" id="fernSpreadAngle" min="30" max="80" value="45" step="5">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernLeafletLength">Chiều dài lá con</label>
+              <span class="value-display" id="fernLeafletLength-val">75%</span>
+            </div>
+            <input type="range" id="fernLeafletLength" min="50" max="150" value="75" step="2">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernLeafletWidth">Chiều rộng lá con</label>
+              <span class="value-display" id="fernLeafletWidth-val">100%</span>
+            </div>
+            <input type="range" id="fernLeafletWidth" min="30" max="200" value="100" step="5">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernBranchPoints">Số cặp lá con cấp 1</label>
+              <span class="value-display" id="fernBranchPoints-val">8</span>
+            </div>
+            <input type="range" id="fernBranchPoints" min="5" max="15" value="8" step="1">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernAlternateRate">Tỉ lệ lá so le</label>
+              <span class="value-display" id="fernAlternateRate-val">0%</span>
+            </div>
+            <input type="range" id="fernAlternateRate" min="0" max="100" value="0" step="5">
+          </div>
+
+          <div class="control-item fern-only hidden">
+            <div class="label-wrapper">
+              <label for="fernTaperProfile">Độ nhọn tán lá</label>
+              <span class="value-display" id="fernTaperProfile-val">1.2</span>
+            </div>
+            <input type="range" id="fernTaperProfile" min="0.5" max="3.0" value="1.2" step="0.1">
+          </div>
+        </section>
+
+        <!-- Section: Leaves settings -->
+        <section class="control-group" id="leaves-settings-group">
+          <h2>Màu & Dáng Lá Cây</h2>
+
+          <div class="control-item" id="leaf-type-wrapper">
+            <label for="leafType">Màu sắc lá cây</label>
+            <div class="select-wrapper">
+              <select id="leafType">
+                <option value="emerald" selected>Emerald (Xanh ngọc lục bảo)</option>
+                <option value="eucalyptus">Eucalyptus Silver (Lá Bạch Đàn xanh bạc)</option>
+                <option value="sakura">Sakura (Hoa Anh Đào)</option>
+                <option value="autumn">Autumn Maple (Lá phong vàng)</option>
+                <option value="ginkgo">Golden Ginkgo (Lá ngân hạnh vàng)</option>
+                <option value="wisteria">Wisteria Violet (Hoa tử đằng tím)</option>
+                <option value="frost">Crystal Frost (Lá băng tuyết cổ tích)</option>
+                <option value="sunset">Fiery Sunset (Lá hoàng hôn rực rỡ)</option>
+                <option value="midnight">Celestial Midnight (Lá đêm dải ngân hà)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-item tree-only" id="leaf-shape-wrapper">
+            <label for="leafShape">Dạng hình học lá</label>
+            <div class="select-wrapper">
+              <select id="leafShape">
+                <option value="auto" selected>✨ Lá ngẫu nhiên</option>
+                <option value="willow">Lá Liễu Rủ (12 Đoạn Trọng Lực)</option>
+                <option value="eucalyptus_long">Lá Bạch Đàn Dài</option>
+                <option value="round">Lá Bạc Hà Tròn</option>
+                <option value="tung_lahan">Lá Tùng La Hán</option>
+                <option value="sakura_leaf">Hoa Anh Đào</option>
+                <option value="pointed">Lá Đỉnh Nhọn</option>
+                <option value="needle">Lá Thông</option>
+                <option value="single_needle">Lá Me</option>
+                <option value="maple">Lá Phong tròn</option>
+                <option value="maple5">Lá Phong nhọn</option>
+                <option value="ginkgo_fan">Lá Ngân Hạnh</option>
+                <option value="heart">Lá Trái Tim</option>
+                <option value="bodhi">Lá Bồ Đề</option>
+                <option value="oval">Lá Oval</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Environment & Sky Background -->
+        <section class="control-group">
+          <h2>Môi trường & Nền Trời</h2>
+
+          <div class="control-item" id="wind-strength-wrapper">
+            <div class="label-wrapper">
+              <label for="windStrength">Sức gió</label>
+              <span class="value-display" id="windStrength-val">4.0</span>
+            </div>
+            <input type="range" id="windStrength" min="0" max="2" value="1" step="0.1">
+          </div>
+
+          <div class="control-item" id="sky-preset-wrapper">
+            <label for="skyPreset">Bối cảnh nền trời</label>
+            <div class="select-wrapper">
+              <select id="skyPreset">
+                <option value="none">🖤 Nền đen đặc (Deep Black)</option>
+                <option value="clear_blue">☁️ Trong xanh (Clear Blue)</option>
+                <option value="sunny">☀️ Nắng rực rỡ (Sunny Rays)</option>
+                <option value="rainy">🌧️ Mưa rào (Rainy Storm)</option>
+                <option value="misty">🌫️ Sương mù (Misty Fog)</option>
+                <option value="sunset">🌅 Hoàng hôn (Sunset Glow)</option>
+                <option value="sunrise">🌄 Bình minh (Sunrise Morning)</option>
+                <option value="starry_night" selected>🌙 Đêm đầy sao (Starry Night)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-item checkbox-item" style="margin-top: 8px;">
+            <label for="autoSkyCycle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+              <input type="checkbox" id="autoSkyCycle" style="width: 16px; height: 16px; accent-color: var(--accent-color);">
+              <span>Tự động chuyển chu kỳ thời gian (Day/Night)</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Section: Colors -->
+        <section class="control-group tree-only">
+          <h2>Màu Thân Cây</h2>
+          <div class="control-item">
+            <div class="select-wrapper">
+              <select id="colorTheme">
+                <option value="cyberpunk" selected>Cyberpunk Neon (Tím - Hồng)</option>
+                <option value="eucalyptus">Eucalyptus Silver (Xanh Thẫm - Bạc)</option>
+                <option value="sakura">Sakura Garden (Gỗ Nâu - Hồng Đào)</option>
+                <option value="autumn">Golden Autumn (Gỗ Đen - Hổ Phách)</option>
+                <option value="emerald">Forest Emerald (Gỗ Rừng - Lục Bảo)</option>
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer & Action Buttons -->
+      <footer class="panel-footer">
+        <div class="action-buttons">
+          <button id="randomBtn" class="btn btn-primary" title="Xáo trộn ngẫu nhiên thông số">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Cây ngẫu nhiên mới
+          </button>
+        </div>
+
+        <div class="btn-group">
+          <button id="saveTreeBtn" class="btn btn-secondary" title="Lưu thông số và hình dáng cây vào vườn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Lưu cây này
+          </button>
+          <button id="gardenBtn" class="btn btn-secondary" title="Mở khu vườn cây đã lưu">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            Khu vườn
+          </button>
+        </div>
+        
+        <div class="credits">
+          Designed with 💜 by Antigravity
+        </div>
+      </footer>
+    </aside>
+  </main>
+
+  <!-- Dashboard Overlay -->
+  <div id="dashboardOverlay" class="dashboard-overlay">
+    <div class="dashboard-container">
+      <header class="dashboard-header">
+        <div class="dashboard-title-area">
+          <h1>🌲 KHU VƯỜN DIỆU KỲ</h1>
+          <p>Lưu trữ, xem lại và quản lý bộ sưu tập cây fractal độc đáo của riêng bạn</p>
+        </div>
+        <div class="dashboard-menu" style="display: flex; gap: 12px; align-items: center; margin: 0 20px;">
+          <button id="newSequentialBtn" class="btn btn-primary" style="padding: 10px 16px; font-size: 0.85rem;" title="Trồng một cây phân nhánh mới">
+            + Cây Phân Nhánh
+          </button>
+          <button id="newFernBtn" class="btn btn-fern" style="padding: 10px 16px; font-size: 0.85rem;" title="Trồng một cây dương xỉ mới">
+            + Cây Dương Xỉ
+          </button>
+        </div>
+        <button id="closeDashboardBtn" class="btn-close" title="Quay lại phòng thiết kế">
+          &times;
+        </button>
+      </header>
+      
+      <main class="dashboard-content">
+        <div class="garden-grid" id="gardenGrid">
+          <!-- Dynamically populated cards go here -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Naming Modal -->
+  <div id="saveModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Đặt tên cho cây của bạn</h3>
+      <p>Đặt một cái tên ý nghĩa để lưu tác phẩm này vào Khu vườn diệu kỳ.</p>
+      <input type="text" id="treeNameInput" placeholder="Ví dụ: Cây Hoa Anh Đào Mùa Xuân" maxlength="32">
+      <div class="modal-buttons">
+        <button id="cancelSaveBtn" class="btn btn-secondary">Hủy</button>
+        <button id="confirmSaveBtn" class="btn btn-primary">Lưu vào vườn</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tree Rendering Libraries & Physics Engine -->
+  <script src="lib/leaf-configs.js?v=tamarind-oval-v11"></script>
+  <script src="lib/random-engine.js?v=tamarind-oval-v11"></script>
+  <script src="lib/verlet.js?v=tamarind-oval-v11"></script>
+  <script src="lib/fractal-branch-tree.js?v=tamarind-oval-v11"></script>
+  <script src="lib/barnsley-fern-tree.js?v=tamarind-oval-v11"></script>
+  <script src="lib/sky-background.js?v=tamarind-oval-v11"></script>
+
+  <!-- Logic Code -->
+  <script src="sketch.js?v=tamarind-oval-v11"></script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Nhà Kính Danh Dự - Archive Gallery | Fractal Tree NFC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f1412;
+      --bg-card: #18221e;
+      --bg-elevated: #21302b;
+      --accent-green: #4ade80;
+      --accent-gold: #fbbf24;
+      --accent-sakura: #f472b6;
+      --text-main: #f0fdf4;
+      --text-muted: #86a397;
+      --border-subtle: rgba(74, 222, 128, 0.15);
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #080b0a;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .phone-frame {
+      width: 100%;
+      max-width: 412px;
+      height: 860px;
+      background: var(--bg-dark);
+      border-radius: 46px;
+      border: 8px solid #243029;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 115px;
+      height: 28px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+    }
+    .status-bar {
+      height: 48px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 90;
+    }
+
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 8px 84px;
+    }
+    .content-scroll::-webkit-scrollbar { display: none; }
+
+    /* Header */
+    .header {
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.4px;
+    }
+    .header p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    /* Museum Grid - 2 Equal Columns */
+    .archive-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .archive-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 8px;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    .archive-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(74, 222, 128, 0.4);
+    }
+
+    .museum-frame {
+      width: 100%;
+      height: 118px;
+      background: #0c120f;
+      border-radius: 12px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .gallery-tree-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .gold-seal {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(251, 191, 36, 0.2);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .archive-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .archive-date {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+    .archive-f1-badge {
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--accent-gold);
+      background: rgba(251, 191, 36, 0.1);
+      padding: 3px 6px;
+      border-radius: 8px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 72px;
+      background: rgba(15, 20, 18, 0.9);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px 8px;
+      z-index: 80;
+    }
+    .nav-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 12px;
+    }
+    .nav-tab.active { color: var(--accent-green); }
+    .nav-tab svg { width: 22px; height: 22px; stroke-width: 2; }
+  </style>
+</head>
+<body>
+
+  <div class="phone-frame">
+    <div class="notch"></div>
+
+    <div class="status-bar">
+      <span>12:45</span>
+      <div style="font-size:11px; color:var(--accent-gold); font-weight:600;">BẢO TÀNG DANH DỰ</div>
+    </div>
+
+    <div class="content-scroll">
+      <div class="header">
+        <h1>Nhà Kính Danh Dự</h1>
+        <p>Lưu danh những cây cổ thụ đã hoàn thành hoặc lưu giữ tiến độ và nhường thẻ NFC để tái sinh mầm sống mới</p>
+      </div>
+
+      <div class="archive-grid">
+        
+        <!-- Archive 1: Sakura -->
+        <a href="02-tree-detail.html?tree=sakura" class="archive-item">
+          <div class="museum-frame">
+            <div class="gold-seal">CỔ THỤ</div>
+            <canvas class="gallery-tree-canvas" id="canvasSakuraArchive" width="130" height="130"></canvas>
+          </div>
+          <div class="archive-title">Anh Đào Đời Đầu</div>
+          <div class="archive-date">Hoàn thành: 15/08/2026</div>
+          <div><span class="archive-f1-badge">✨ Đã sinh: 2 Hạt F1</span></div>
+        </a>
+
+        <!-- Archive 2: Emerald Oak -->
+        <a href="02-tree-detail.html?tree=emerald" class="archive-item">
+          <div class="museum-frame">
+            <div class="gold-seal">CỔ THỤ</div>
+            <canvas class="gallery-tree-canvas" id="canvasEmeraldArchive" width="130" height="130"></canvas>
+          </div>
+          <div class="archive-title">Cổ Thụ Lục Bảo #012</div>
+          <div class="archive-date">Hoàn thành: 28/08/2026</div>
+          <div><span class="archive-f1-badge">✨ Đã sinh: 1 Hạt F1</span></div>
+        </a>
+
+        <!-- Archive 3: Ginkgo Fan -->
+        <a href="02-tree-detail.html?tree=ginkgo" class="archive-item">
+          <div class="museum-frame">
+            <div class="gold-seal">CỔ THỤ</div>
+            <canvas class="gallery-tree-canvas" id="canvasGinkgoArchive" width="130" height="130"></canvas>
+          </div>
+          <div class="archive-title">Bạch Quả Hoàng Gia #044</div>
+          <div class="archive-date">Hoàn thành: 01/09/2026</div>
+          <div><span class="archive-f1-badge">✨ Đã sinh: 1 Hạt F1</span></div>
+        </a>
+
+        <!-- Archive 4: Wisteria Violet -->
+        <a href="02-tree-detail.html?tree=wisteria" class="archive-item">
+          <div class="museum-frame">
+            <div class="gold-seal">CỔ THỤ</div>
+            <canvas class="gallery-tree-canvas" id="canvasWisteriaArchive" width="130" height="130"></canvas>
+          </div>
+          <div class="archive-title">Tử Đằng Cổ Kính #009</div>
+          <div class="archive-date">Hoàn thành: 05/09/2026</div>
+          <div><span class="archive-f1-badge">✨ Đã sinh: 2 Hạt F1</span></div>
+        </a>
+
+        <!-- Archive 5: Preserved at 45% -->
+        <a href="02-tree-detail.html?tree=emerald" class="archive-item">
+          <div class="museum-frame">
+            <div class="gold-seal" style="background: rgba(251, 191, 36, 0.2); border-color: #fbbf24; color: #fbbf24;">45%</div>
+            <canvas class="gallery-tree-canvas" id="canvasMapleArchive" width="130" height="130"></canvas>
+          </div>
+          <div class="archive-title">Phong Đỏ Lưu Giữ #028</div>
+          <div class="archive-date">Lưu trữ: 12/09/2026</div>
+          <div><span class="archive-f1-badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">📦 Tiến độ: 45%</span></div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+      <a href="01-garden-dashboard.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Vườn Cây</span>
+      </a>
+      <a href="03-archive-gallery.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        <span>Nhà Kính</span>
+      </a>
+      <a href="04-settings-guide.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Cài Đặt</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // MUSEUM MATURE FRACTAL MULTI-BRANCHING ENGINE
+    // =========================================================
+    const SPECIES_CONFIGS = {
+      sakura: {
+        shape: 'sakura',
+        colors: ['#fda4ba', '#f472b6', '#fce7f3'],
+        trunk: '#713f12',
+        branchAngle: 28 * Math.PI / 180,
+        decay: 0.74,
+        maxDepth: 6
+      },
+      emerald: {
+        shape: 'pointed',
+        colors: ['#34d399', '#6ee7b7', '#059669'],
+        trunk: '#78350f',
+        branchAngle: 24 * Math.PI / 180,
+        decay: 0.75,
+        maxDepth: 6
+      },
+      ginkgo: {
+        shape: 'ginkgo',
+        colors: ['#facc15', '#eab308', '#f59e0b'],
+        trunk: '#5c2b09',
+        branchAngle: 25 * Math.PI / 180,
+        decay: 0.73,
+        maxDepth: 6
+      },
+      wisteria: {
+        shape: 'heart',
+        colors: ['#c084fc', '#a855f7', '#e879f9'],
+        trunk: '#3e2723',
+        branchAngle: 26 * Math.PI / 180,
+        decay: 0.72,
+        maxDepth: 6
+      }
+    };
+
+    function drawMuseumTree(canvasId, speciesKey) {
+      const c = document.getElementById(canvasId);
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const cfg = SPECIES_CONFIGS[speciesKey];
+      const startX = w / 2;
+      const startY = h - 8;
+
+      // Base Mound
+      ctx.fillStyle = '#1c2822';
+      ctx.beginPath();
+      ctx.ellipse(startX, startY + 3, 34, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const initLen = 34;
+      const initThick = 6.2;
+
+      function drawBranch(x, y, len, angle, depth, thick, id) {
+        const endX = x + len * Math.cos(angle);
+        const endY = y + len * Math.sin(angle);
+
+        ctx.strokeStyle = cfg.trunk;
+        ctx.lineWidth = Math.max(1.2, thick);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        if (depth <= 1) {
+          const color = cfg.colors[id % cfg.colors.length];
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          if (cfg.shape === 'sakura') {
+            ctx.ellipse(endX, endY, 2.8, 4.5, angle, 0, Math.PI * 2);
+          } else if (cfg.shape === 'ginkgo') {
+            ctx.ellipse(endX, endY, 4.2, 3.2, 0, 0, Math.PI * 2);
+          } else if (cfg.shape === 'heart') {
+            ctx.arc(endX, endY, 3.4, 0, Math.PI * 2);
+          } else {
+            ctx.ellipse(endX, endY, 2.5, 4.2, angle, 0, Math.PI * 2);
+          }
+          ctx.fill();
+          return;
+        }
+
+        const is3Way = (id % 2 === 0);
+        // Left
+        drawBranch(endX, endY, len * cfg.decay, angle - cfg.branchAngle, depth - 1, thick * 0.72, id * 3 + 1);
+        // Center 3-way
+        if (is3Way) {
+          drawBranch(endX, endY, len * cfg.decay * 0.88, angle + 0.05, depth - 1, thick * 0.65, id * 3 + 2);
+        }
+        // Right
+        drawBranch(endX, endY, len * cfg.decay, angle + cfg.branchAngle, depth - 1, thick * 0.72, id * 3 + 3);
+      }
+
+      drawBranch(startX, startY, initLen, -Math.PI / 2, cfg.maxDepth, initThick, 0);
+
+      // Gold aura glow at bottom trunk
+      const aura = ctx.createRadialGradient(startX, startY, 2, startX, startY, 40);
+      aura.addColorStop(0, 'rgba(251, 191, 36, 0.15)');
+      aura.addColorStop(1, 'rgba(251, 191, 36, 0)');
+      ctx.fillStyle = aura;
+      ctx.beginPath();
+      ctx.arc(startX, startY - 20, 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      drawMuseumTree('canvasSakuraArchive', 'sakura');
+      drawMuseumTree('canvasEmeraldArchive', 'emerald');
+      drawMuseumTree('canvasGinkgoArchive', 'ginkgo');
+      drawMuseumTree('canvasWisteriaArchive', 'wisteria');
+      drawMuseumTree('canvasMapleArchive', 'sakura');
+    });
+    // Immediately execute
+    drawMuseumTree('canvasSakuraArchive', 'sakura');
+    drawMuseumTree('canvasEmeraldArchive', 'emerald');
+    drawMuseumTree('canvasGinkgoArchive', 'ginkgo');
+    drawMuseumTree('canvasWisteriaArchive', 'wisteria');
+    drawMuseumTree('canvasMapleArchive', 'sakura');
+  </script>
+</body>
+</html>

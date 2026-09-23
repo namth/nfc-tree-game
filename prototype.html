@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fractal Tree NFC Game - Interactive Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f1412;
+      --bg-card: #18221e;
+      --bg-elevated: #21302b;
+      --accent-green: #4ade80;
+      --accent-gold: #fbbf24;
+      --accent-sakura: #f472b6;
+      --accent-wood: #a16207;
+      --text-main: #f0fdf4;
+      --text-muted: #86a397;
+      --border-subtle: rgba(74, 222, 128, 0.15);
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background: #080b0a;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Phone Mockup Frame */
+    .phone-container {
+      width: 100%;
+      max-width: 412px;
+      height: 860px;
+      background: var(--bg-dark);
+      border-radius: 46px;
+      border: 8px solid #28332e;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Dynamic Island / Notch */
+    .phone-notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 115px;
+      height: 28px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+    }
+    .notch-camera {
+      width: 10px;
+      height: 10px;
+      background: #111e18;
+      border-radius: 50%;
+      border: 1px solid #1f3329;
+    }
+    .notch-sensor {
+      width: 7px;
+      height: 7px;
+      background: #08120d;
+      border-radius: 50%;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      height: 48px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 90;
+    }
+
+    /* Screen Area */
+    .screen-content {
+      flex: 1;
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 74px;
+    }
+    .screen-content::-webkit-scrollbar { display: none; }
+
+    /* Active screen toggling */
+    .screen {
+      display: none;
+      min-height: 100%;
+      padding: 16px 20px;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: rgba(15, 20, 18, 0.88);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px 8px;
+      z-index: 80;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 6px 12px;
+      border-radius: 12px;
+    }
+    .nav-item.active {
+      color: var(--accent-green);
+    }
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+    }
+
+    /* Floating NFC Scan Button */
+    .fab-nfc {
+      position: absolute;
+      bottom: 84px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #22c55e, #15803d);
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 70;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fab-nfc:active { transform: scale(0.92); }
+    .fab-nfc svg { width: 28px; height: 28px; stroke: #fff; fill: none; }
+
+    /* =========================================
+       SCREEN 1: GARDEN DASHBOARD
+       ========================================= */
+    .garden-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .garden-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .garden-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .badge-offline {
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      color: var(--accent-green);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* Tabs Filter */
+    .tab-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      background: #131a17;
+      padding: 4px;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+    }
+    .tab-pill {
+      flex: 1;
+      text-align: center;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+    }
+    .tab-pill.active {
+      background: var(--bg-elevated);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Tree Card Grid */
+    .tree-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .tree-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .tree-card:hover {
+      border-color: rgba(74, 222, 128, 0.4);
+      transform: translateY(-2px);
+    }
+    .tree-card.has-seed {
+      border-color: rgba(251, 191, 36, 0.4);
+      background: linear-gradient(135deg, #1d2720, #261f14);
+    }
+    .tree-thumb {
+      width: 80px;
+      height: 80px;
+      background: #0d1310;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .tree-info {
+      flex: 1;
+    }
+    .tree-tag-id {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent-green);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tree-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .progress-bar-bg {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+      border-radius: 6px;
+      transition: width 0.3s ease;
+    }
+    .tree-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .seed-glow-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(251, 191, 36, 0.2);
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      color: var(--accent-gold);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+
+    /* =========================================
+       SCREEN 2: TREE DETAIL & ZEN VIEW
+       ========================================= */
+    .detail-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .btn-back {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .canvas-container {
+      width: 100%;
+      height: 380px;
+      background: radial-gradient(circle at 50% 60%, #17241e, #0a0f0d);
+      border-radius: 28px;
+      border: 1px solid var(--border-subtle);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+    }
+    #fractalCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Seed Ready Floating Orb in Canvas */
+    .canvas-seed-orb {
+      position: absolute;
+      top: 70px;
+      right: 50px;
+      width: 32px;
+      height: 32px;
+      background: radial-gradient(circle, #fef08a, #ca8a04);
+      border-radius: 50%;
+      box-shadow: 0 0 25px #fbbf24, 0 0 50px rgba(251, 191, 36, 0.6);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: floatOrb 3s ease-in-out infinite alternate;
+    }
+    @keyframes floatOrb {
+      0% { transform: translateY(0px) scale(0.95); }
+      100% { transform: translateY(-8px) scale(1.08); }
+    }
+
+    .detail-info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .detail-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .detail-tree-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .detail-species {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(74, 222, 128, 0.15);
+      border-radius: 12px;
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    /* Interactive Growth Slider */
+    .slider-box {
+      margin: 10px 0 14px;
+    }
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .growth-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      outline: none;
+    }
+    .growth-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+      cursor: pointer;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .stat-item {
+      background: #121815;
+      padding: 10px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .stat-val { font-size: 13px; font-weight: 700; color: #fff; }
+    .stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Action Buttons in Detail */
+    .btn-harvest-nfc {
+      width: 100%;
+      background: linear-gradient(135deg, #f59e0b, #b45309);
+      border: none;
+      padding: 14px;
+      border-radius: 16px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+      transition: transform 0.2s;
+    }
+    .btn-harvest-nfc:active { transform: scale(0.98); }
+
+    /* =========================================
+       SCREEN 3: ARCHIVE GALLERY
+       ========================================= */
+    .archive-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .archive-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .archive-card:hover {
+      border-color: rgba(74, 222, 128, 0.3);
+      transform: translateY(-2px);
+    }
+    .archive-thumb {
+      width: 100%;
+      height: 120px;
+      background: #0d1411;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .archive-title { font-size: 13px; font-weight: 600; color: #fff; }
+    .archive-date { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* =========================================
+       SCREEN 4: SETTINGS & NFC GUIDE
+       ========================================= */
+    .guide-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .guide-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .guide-item:last-child { margin-bottom: 0; }
+    .guide-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-elevated);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-green);
+      font-weight: 700;
+    }
+
+    /* =========================================
+       OVERLAY MODAL: NFC RADAR SCANNER
+       ========================================= */
+    .modal-backdrop {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+    }
+    .modal-backdrop.active { display: flex; }
+    .nfc-sheet {
+      width: 100%;
+      background: #141c18;
+      border-top: 1px solid var(--border-subtle);
+      border-radius: 32px 32px 0 0;
+      padding: 24px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      margin-bottom: 18px;
+    }
+    /* Radar Waves */
+    .radar-wrapper {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .radar-wave {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--accent-green);
+      opacity: 0;
+      animation: radarPulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    .radar-wave:nth-child(2) { animation-delay: 0.6s; }
+    .radar-wave:nth-child(3) { animation-delay: 1.2s; }
+    @keyframes radarPulse {
+      0% { transform: scale(0.3); opacity: 0.8; }
+      100% { transform: scale(1.1); opacity: 0; }
+    }
+    .radar-center-icon {
+      width: 58px;
+      height: 58px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--accent-green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-green);
+      z-index: 2;
+    }
+
+    .sheet-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .sheet-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 20px;
+      max-width: 280px;
+    }
+
+    /* Simulation Buttons inside NFC Modal */
+    .sim-buttons-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .btn-sim {
+      width: 100%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-sim:hover {
+      background: rgba(74, 222, 128, 0.2);
+      border-color: var(--accent-green);
+    }
+    .btn-cancel {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MOBILE PHONE SHELL -->
+  <div class="phone-container">
+    
+    <!-- Notch / Dynamic Island -->
+    <div class="phone-notch">
+      <div class="notch-camera"></div>
+      <div class="notch-sensor"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>12:45</span>
+      <div class="badge-offline">
+        <div class="badge-dot"></div>
+        <span>OFFLINE-FIRST</span>
+      </div>
+    </div>
+
+    <!-- SCREEN CONTENT HOLDER -->
+    <div class="screen-content">
+
+      <!-- =========================================
+           SCREEN 1: GARDEN DASHBOARD
+           ========================================= -->
+      <div id="screenGarden" class="screen active">
+        <div class="garden-header">
+          <div>
+            <h1 class="garden-title">Khu Vườn Của Nam</h1>
+            <p class="garden-subtitle">Chạm thẻ NFC để gieo mầm hoặc ngắm cây lớn</p>
+          </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="tab-pills">
+          <div class="tab-pill active" onclick="filterGarden('active', this)">Đang Lớn (2)</div>
+          <div class="tab-pill" onclick="filterGarden('mature', this)">Đã Trưởng Thành (1)</div>
+        </div>
+
+        <!-- Tree Card List -->
+        <div class="tree-grid" id="gardenGrid">
+          
+          <!-- Tree 1: Oak Tree (Active) -->
+          <div class="tree-card" onclick="openTreeDetail('tree-oak')">
+            <div class="tree-thumb">
+              <svg width="50" height="50" viewBox="0 0 100 100">
+                <path d="M50,90 L50,60 M50,60 L30,40 M50,60 L70,40 M30,40 L20,25 M30,40 L40,25 M70,40 L60,25 M70,40 L80,25" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none" />
+                <circle cx="20" cy="25" r="5" fill="#22c55e" />
+                <circle cx="40" cy="25" r="5" fill="#22c55e" />
+                <circle cx="60" cy="25" r="5" fill="#22c55e" />
+                <circle cx="80" cy="25" r="5" fill="#22c55e" />
+              </svg>
+            </div>
+            <div class="tree-info">
+              <div class="tree-tag-id">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg>
+                NTAG213 • ID: #OAK-082
+              </div>
+              <div class="tree-name">Cây Sồi Cổ Thụ</div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 72%;"></div>
+              </div>
+              <div class="tree-meta-row">
+                <span>Tiến trình: <strong>72%</strong></span>
+                <span>Còn 2 ngày 5 giờ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tree 2: Sakura Tree (Active) -->
+          <div class="tree-card" onclick="openTreeDetail('tree-sakura')">
+            <div class="tree-thumb">
+              <svg width="50" height="50" viewBox="0 0 100 100">
+                <path d="M50,90 L50,65 M50,65 L35,45 M50,65 L65,45 M35,45 L25,30 M65,45 L75,30" stroke="#f472b6" stroke-width="3" stroke-linecap="round" fill="none" />
+                <circle cx="25" cy="30" r="6" fill="#f472b6" opacity="0.8" />
+                <circle cx="75" cy="30" r="6" fill="#f472b6" opacity="0.8" />
+                <circle cx="50" cy="40" r="5" fill="#f472b6" opacity="0.8" />
+              </svg>
+            </div>
+            <div class="tree-info">
+              <div class="tree-tag-id">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg>
+                NTAG215 • ID: #SAK-104
+              </div>
+              <div class="tree-name">Anh Đào Hồng</div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 35%; background: linear-gradient(90deg, #ec4899, #f472b6);"></div>
+              </div>
+              <div class="tree-meta-row">
+                <span>Tiến trình: <strong>35%</strong></span>
+                <span>Còn 5 ngày 12 giờ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tree 3: Maple Tree (100% Mature & Has Seed) -->
+          <div class="tree-card has-seed" onclick="openTreeDetail('tree-maple')">
+            <div class="seed-glow-badge">✨ HẠT GIỐNG F1</div>
+            <div class="tree-thumb">
+              <svg width="50" height="50" viewBox="0 0 100 100">
+                <path d="M50,90 L50,55 M50,55 L25,35 M50,55 L75,35 M25,35 L15,18 M25,35 L35,18 M75,35 L65,18 M75,35 L85,18" stroke="#f97316" stroke-width="4" stroke-linecap="round" fill="none" />
+                <circle cx="15" cy="18" r="6" fill="#ef4444" />
+                <circle cx="35" cy="18" r="6" fill="#ef4444" />
+                <circle cx="65" cy="18" r="6" fill="#ef4444" />
+                <circle cx="85" cy="18" r="6" fill="#ef4444" />
+                <!-- Seed icon -->
+                <circle cx="50" cy="30" r="7" fill="#fbbf24" stroke="#fff" stroke-width="1.5" />
+              </svg>
+            </div>
+            <div class="tree-info">
+              <div class="tree-tag-id" style="color: var(--accent-gold);">
+                NTAG213 • ID: #MAP-001
+              </div>
+              <div class="tree-name">Phong Đỏ Hoàng Gia</div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24);"></div>
+              </div>
+              <div class="tree-meta-row">
+                <span style="color: var(--accent-gold); font-weight:600;">100% Trưởng thành</span>
+                <span style="color: var(--accent-gold);">Sẵn sàng thu hoạch!</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =========================================
+           SCREEN 2: TREE DETAIL & ZEN VIEW
+           ========================================= -->
+      <div id="screenDetail" class="screen">
+        <div class="detail-topbar">
+          <div class="btn-back" onclick="navTo('screenGarden')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </div>
+          <span style="font-family: var(--font-display); font-size: 16px;">Chi Tiết Cây</span>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <!-- Canvas Skia Simulator -->
+        <div class="canvas-container">
+          <canvas id="fractalCanvas" width="370" height="380"></canvas>
+          
+          <!-- Interactive Seed Orb (If has seed) -->
+          <div id="canvasSeedOrb" class="canvas-seed-orb" onclick="triggerNfcModal('harvest')" title="Bấm để thu hoạch hạt giống">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#000"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          </div>
+        </div>
+
+        <!-- Detail Information Card -->
+        <div class="detail-info-card">
+          <div class="detail-title-row">
+            <div>
+              <div class="detail-tree-name" id="detailName">Cây Sồi Cổ Thụ</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top:2px;">Thẻ NFC UID: <span id="detailUid" style="color: var(--accent-green);">04:B2:71:A2:89</span></div>
+            </div>
+            <div class="detail-species" id="detailSpecies">OAK LEAF</div>
+          </div>
+
+          <!-- Growth Simulation Slider -->
+          <div class="slider-box">
+            <div class="slider-label-row">
+              <span>Tiến trình sinh trưởng</span>
+              <span id="sliderPercent">72%</span>
+            </div>
+            <input type="range" min="0" max="100" value="72" class="growth-slider" id="growthSlider" oninput="onSliderChange(this.value)">
+          </div>
+
+          <!-- Gen & Hardware Stats -->
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-val" id="statAngle">28°</div>
+              <div class="stat-lbl">Góc cành</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="statDepth">9 Tầng</div>
+              <div class="stat-lbl">Độ sâu đệ quy</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="statDuration">7 Ngày</div>
+              <div class="stat-lbl">Thời gian 100%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button based on context -->
+        <div id="actionHarvestBtn" style="margin-bottom: 20px;">
+          <button class="btn-harvest-nfc" onclick="triggerNfcModal('harvest')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Thu Hoạch Hạt Giống F1 Vào Thẻ NFC
+          </button>
+        </div>
+
+      </div>
+
+      <!-- =========================================
+           SCREEN 3: ARCHIVE GALLERY (NHÀ KÍNH)
+           ========================================= -->
+      <div id="screenArchive" class="screen">
+        <div class="garden-header">
+          <div>
+            <h1 class="garden-title">Nhà Kính Danh Dự</h1>
+            <p class="garden-subtitle">Lưu danh những cây cổ thụ đã tái sinh thẻ NFC</p>
+          </div>
+        </div>
+
+        <div class="archive-grid">
+          <!-- Archive 1 -->
+          <div class="archive-card" onclick="viewArchivedTree('Cổ Thụ Đời Đầu', 'SAKURA', 8)">
+            <div class="archive-thumb">
+              <svg width="60" height="60" viewBox="0 0 100 100">
+                <path d="M50,90 L50,60 M50,60 L25,40 M50,60 L75,40 M25,40 L15,20 M25,40 L35,20 M75,40 L65,20 M75,40 L85,20" stroke="#f472b6" stroke-width="3" stroke-linecap="round" fill="none" />
+                <circle cx="15" cy="20" r="4" fill="#f472b6" />
+                <circle cx="35" cy="20" r="4" fill="#f472b6" />
+                <circle cx="65" cy="20" r="4" fill="#f472b6" />
+                <circle cx="85" cy="20" r="4" fill="#f472b6" />
+              </svg>
+            </div>
+            <div class="archive-title">Cổ Thụ Sakura #001</div>
+            <div class="archive-date">Hoàn thành: 15/08/2026</div>
+            <div style="font-size: 10px; color: var(--accent-gold); margin-top:4px;">Đã sinh: 2 Hạt F1</div>
+          </div>
+
+          <!-- Archive 2 -->
+          <div class="archive-card" onclick="viewArchivedTree('Bạch Quả Hoàng Gia', 'GINKGO', 9)">
+            <div class="archive-thumb">
+              <svg width="60" height="60" viewBox="0 0 100 100">
+                <path d="M50,90 L50,60 M50,60 L30,40 M50,60 L70,40 M30,40 L20,25 M70,40 L80,25" stroke="#eab308" stroke-width="4" stroke-linecap="round" fill="none" />
+                <circle cx="20" cy="25" r="6" fill="#facc15" />
+                <circle cx="80" cy="25" r="6" fill="#facc15" />
+              </svg>
+            </div>
+            <div class="archive-title">Bạch Quả #044</div>
+            <div class="archive-date">Hoàn thành: 01/09/2026</div>
+            <div style="font-size: 10px; color: var(--accent-gold); margin-top:4px;">Đã sinh: 1 Hạt F1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================
+           SCREEN 4: SETTINGS & NFC GUIDE
+           ========================================= -->
+      <div id="screenSettings" class="screen">
+        <div class="garden-header">
+          <div>
+            <h1 class="garden-title">Cài Đặt & NFC</h1>
+            <p class="garden-subtitle">Tối ưu tương tác phần cứng và âm thanh</p>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3 style="font-size: 15px; margin-bottom: 12px; color: #fff;">Vị Trí Cảm Biến Thẻ NFC</h3>
+          <div class="guide-item">
+            <div class="guide-icon"></div>
+            <div style="font-size: 12px; line-height: 1.4;">
+              <strong>Dòng iPhone:</strong> Cảm biến NFC nằm ở <em>đỉnh máy cạnh cụm camera</em>. Hãy áp thẻ vào sát mép trên cùng lưng máy.
+            </div>
+          </div>
+          <div class="guide-item">
+            <div class="guide-icon">🤖</div>
+            <div style="font-size: 12px; line-height: 1.4;">
+              <strong>Dòng Android:</strong> Cảm biến NFC thường nằm ở <em>chính giữa mặt lưng</em> hoặc gần logo nhà sản xuất.
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3 style="font-size: 15px; margin-bottom: 12px; color: #fff;">Thông Tin Hệ Thống</h3>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.8;">
+            • Chuẩn mã hóa: <strong>Binary Protocol 64-Bytes (CRC-16)</strong><br>
+            • Đồ họa: <strong>@shopify/react-native-skia JSI (GPU)</strong><br>
+            • Lưu trữ: <strong>Pure Offline (SQLite + MMKV)</strong><br>
+            • Anti-cheat: <strong>Hardware Monotonic Uptime Guard</strong>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /screen-content -->
+
+    <!-- FLOATING ACTION BUTTON (NFC) -->
+    <div class="fab-nfc" onclick="triggerNfcModal('plant')" title="Quẹt thẻ NFC">
+      <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="navTo('screenGarden', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Vườn Cây</span>
+      </div>
+      <div class="nav-item" onclick="navTo('screenArchive', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        <span>Nhà Kính</span>
+      </div>
+      <div class="nav-item" onclick="navTo('screenSettings', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Cài Đặt</span>
+      </div>
+    </div>
+
+    <!-- =========================================
+         NFC RADAR SCANNER BOTTOM SHEET
+         ========================================= -->
+    <div id="nfcModal" class="modal-backdrop">
+      <div class="nfc-sheet">
+        <div class="sheet-handle"></div>
+        <div class="radar-wrapper">
+          <div class="radar-wave"></div>
+          <div class="radar-wave"></div>
+          <div class="radar-wave"></div>
+          <div class="radar-center-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </div>
+        </div>
+        <div class="sheet-title" id="nfcSheetTitle">Sẵn Sàng Quét Thẻ NFC</div>
+        <div class="sheet-desc" id="nfcSheetDesc">Hãy áp thẻ NFC hạt giống sát vào lưng điện thoại để bắt đầu gieo mầm...</div>
+
+        <!-- Simulation Actions for testing the UX -->
+        <div class="sim-buttons-group">
+          <button class="btn-sim" id="btnSimNewTag" onclick="simulateScan('new')">
+            ✨ Giả lập: Chạm Thẻ Hạt Giống Mới (Gieo Mầm)
+          </button>
+          <button class="btn-sim" id="btnSimOldTag" onclick="simulateScan('overwrite')">
+            ♻️ Giả lập: Ghi Đè Thẻ Cũ (Chuyển Archive)
+          </button>
+          <button class="btn-cancel" onclick="closeNfcModal()">Hủy Bỏ</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phone-container -->
+
+  <!-- =========================================
+       FRACTAL TREE GENERATOR SCRIPT
+       ========================================= -->
+  <script>
+    // State
+    let currentProgress = 0.72;
+    let currentAngle = 28;
+    let currentDepth = 9;
+    let currentLengthFactor = 0.76;
+    let currentLeafType = 0; // 0: Oak, 1: Sakura, 2: Pine, 3: Willow, 4: Maple, 5: Ginkgo
+    let currentLeafColor = '#4ade80';
+    let currentTrunkColor = '#854d0e';
+    let windOffset = 0;
+    let isDetailOpen = false;
+
+    // Canvas Context
+    const canvas = document.getElementById('fractalCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Navigation function
+    function navTo(screenId, navEl) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+      
+      if (navEl) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        navEl.classList.add('active');
+      }
+
+      isDetailOpen = (screenId === 'screenDetail');
+      if (isDetailOpen) {
+        renderFractalTree();
+      }
+    }
+
+    // Open detail from card
+    function openTreeDetail(treeType) {
+      navTo('screenDetail');
+      if (treeType === 'tree-oak') {
+        setTreeData('Cây Sồi Cổ Thụ', '04:B2:71:A2:89', 'OAK LEAF', 72, 28, 9, 0, '#4ade80', '#854d0e', false);
+      } else if (treeType === 'tree-sakura') {
+        setTreeData('Anh Đào Hồng', '04:C8:12:F3:44', 'SAKURA', 35, 32, 8, 1, '#f472b6', '#78350f', false);
+      } else if (treeType === 'tree-maple') {
+        setTreeData('Phong Đỏ Hoàng Gia', '04:A1:99:E5:11', 'MAPLE LEAF', 100, 30, 9, 4, '#ef4444', '#713f12', true);
+      }
+    }
+
+    function setTreeData(name, uid, species, progress, angle, depth, leafType, leafColor, trunkColor, hasSeed) {
+      document.getElementById('detailName').innerText = name;
+      document.getElementById('detailUid').innerText = uid;
+      document.getElementById('detailSpecies').innerText = species;
+      document.getElementById('growthSlider').value = progress;
+      document.getElementById('sliderPercent').innerText = progress + '%';
+      document.getElementById('statAngle').innerText = angle + '°';
+      document.getElementById('statDepth').innerText = depth + ' Tầng';
+      
+      currentProgress = progress / 100;
+      currentAngle = angle;
+      currentDepth = depth;
+      currentLeafType = leafType;
+      currentLeafColor = leafColor;
+      currentTrunkColor = trunkColor;
+
+      const orb = document.getElementById('canvasSeedOrb');
+      const harvestBtn = document.getElementById('actionHarvestBtn');
+      if (hasSeed && progress >= 100) {
+        orb.style.display = 'flex';
+        harvestBtn.style.display = 'block';
+      } else {
+        orb.style.display = 'none';
+        harvestBtn.style.display = 'none';
+      }
+
+      renderFractalTree();
+    }
+
+    function onSliderChange(val) {
+      document.getElementById('sliderPercent').innerText = val + '%';
+      currentProgress = val / 100;
+
+      const orb = document.getElementById('canvasSeedOrb');
+      const harvestBtn = document.getElementById('actionHarvestBtn');
+      if (val == 100) {
+        orb.style.display = 'flex';
+        harvestBtn.style.display = 'block';
+      } else {
+        orb.style.display = 'none';
+        harvestBtn.style.display = 'none';
+      }
+
+      renderFractalTree();
+    }
+
+    // Modal Control
+    function triggerNfcModal(mode) {
+      const modal = document.getElementById('nfcModal');
+      const title = document.getElementById('nfcSheetTitle');
+      const desc = document.getElementById('nfcSheetDesc');
+      const btnOld = document.getElementById('btnSimOldTag');
+
+      if (mode === 'harvest') {
+        title.innerText = 'Thu Hoạch Hạt Giống F1';
+        desc.innerText = 'Chạm một thẻ NFC mới để gieo hạt, HOẶC chạm lại chính thẻ cũ để ghi đè (cây cũ sẽ vào Nhà kính).';
+        btnOld.style.display = 'flex';
+      } else {
+        title.innerText = 'Gieo Mầm Cây Mới';
+        desc.innerText = 'Áp thẻ NFC chứa mầm cây vào lưng điện thoại để nảy mầm vào Khu vườn.';
+        btnOld.style.display = 'none';
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeNfcModal() {
+      document.getElementById('nfcModal').classList.remove('active');
+    }
+
+    function simulateScan(type) {
+      closeNfcModal();
+      if (type === 'new') {
+        alert('🎉 [Giả lập NFC] Đã quét thành công Thẻ Mới!\n\nMầm cây mới đã được gieo vào Khu vườn với thời gian sinh trưởng 7 ngày!');
+        navTo('screenGarden');
+      } else {
+        alert('♻️ [Giả lập NFC] Đã ghi đè thẻ cũ thành công!\n\nCây Cổ Thụ cũ đã được lưu trữ an toàn vào "Nhà Kính Danh Dự" để vinh danh!');
+        navTo('screenArchive');
+      }
+    }
+
+    function filterGarden(type, el) {
+      document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function viewArchivedTree(title, type, depth) {
+      openTreeDetail('tree-oak');
+      document.getElementById('detailName').innerText = title;
+      document.getElementById('growthSlider').value = 100;
+      onSliderChange(100);
+      document.getElementById('actionHarvestBtn').style.display = 'none';
+      document.getElementById('canvasSeedOrb').style.display = 'none';
+    }
+
+    // =========================================
+    // CORE FRACTAL TREE RENDERER (Canvas 2D)
+    // =========================================
+    function renderFractalTree() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const startX = canvas.width / 2;
+      const startY = canvas.height - 30;
+      const initialLength = 80 * Math.min(1.0, currentProgress * 1.5);
+      const initialThickness = 12 * Math.min(1.0, currentProgress * 1.2);
+
+      // Base soil mound
+      ctx.fillStyle = '#1e2923';
+      ctx.beginPath();
+      ctx.ellipse(startX, startY + 10, 60, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Start recursive drawing
+      drawBranch(startX, startY, initialLength, -Math.PI / 2, currentDepth, initialThickness);
+    }
+
+    function drawBranch(x, y, length, angle, depth, thickness) {
+      if (depth === 0 || length < 2) return;
+
+      // Wind sway effect
+      const currentWind = Math.sin(windOffset + depth * 0.4) * 0.04;
+      const effectiveAngle = angle + currentWind;
+
+      const endX = x + length * Math.cos(effectiveAngle);
+      const endY = y + length * Math.sin(effectiveAngle);
+
+      // Draw Branch Line
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = currentTrunkColor;
+      ctx.lineWidth = Math.max(1.2, thickness);
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // If at tip and progress allows, draw leaves
+      if (depth <= 2 && currentProgress > 0.4) {
+        drawLeaf(endX, endY, effectiveAngle);
+      }
+
+      // Recursion parameters
+      const angleRad = (currentAngle * Math.PI) / 180;
+      const nextLength = length * currentLengthFactor;
+      const nextThickness = thickness * 0.7;
+
+      // Left branch
+      drawBranch(endX, endY, nextLength, effectiveAngle - angleRad, depth - 1, nextThickness);
+      // Right branch
+      drawBranch(endX, endY, nextLength, effectiveAngle + angleRad, depth - 1, nextThickness);
+    }
+
+    function drawLeaf(x, y, branchAngle) {
+      const leafScale = Math.min(1.0, (currentProgress - 0.4) / 0.6);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(leafScale, leafScale);
+
+      ctx.fillStyle = currentLeafColor;
+      ctx.beginPath();
+
+      if (currentLeafType === 1) {
+        // Sakura (Cherry blossom petals)
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fbcfe8';
+        ctx.arc(3, -3, 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (currentLeafType === 4) {
+        // Maple (Star-like leaf)
+        ctx.moveTo(0, -8);
+        ctx.lineTo(3, -2);
+        ctx.lineTo(8, -4);
+        ctx.lineTo(4, 2);
+        ctx.lineTo(6, 7);
+        ctx.lineTo(0, 4);
+        ctx.lineTo(-6, 7);
+        ctx.lineTo(-4, 2);
+        ctx.lineTo(-8, -4);
+        ctx.lineTo(-3, -2);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Oak / Classic Leaf Ellipse
+        ctx.ellipse(0, 0, 7, 4, branchAngle, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // Animation Loop for Wind Swaying
+    function animateWind() {
+      windOffset += 0.025;
+      if (isDetailOpen) {
+        renderFractalTree();
+      }
+      requestAnimationFrame(animateWind);
+    }
+
+    // Start
+    renderFractalTree();
+    animateWind();
+  </script>
+</body>
+</html>

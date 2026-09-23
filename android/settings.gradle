@@ -1,0 +1,26 @@
+rootProject.name = 'TreeNFCGame'
+
+// Fix AGP conflict when both ANDROID_PREFS_ROOT and ANDROID_USER_HOME are set
+try {
+    def processEnv = Class.forName("java.lang.ProcessEnvironment")
+    def varClass = Class.forName("java.lang.ProcessEnvironment\$Variable")
+    def varValueOf = varClass.getDeclaredMethod("valueOf", String.class)
+    varValueOf.setAccessible(true)
+
+    def field = processEnv.getDeclaredField("theEnvironment")
+    field.setAccessible(true)
+    def env = (Map) field.get(null)
+    def prefsVar = varValueOf.invoke(null, "ANDROID_PREFS_ROOT")
+    env.remove(prefsVar)
+
+    def ciField = processEnv.getDeclaredField("theCaseInsensitiveEnvironment")
+    ciField.setAccessible(true)
+    def ciEnv = (Map) ciField.get(null)
+    ciEnv.remove(prefsVar)
+} catch (Throwable t) {
+}
+
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+

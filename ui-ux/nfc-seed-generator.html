@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ghi Hạt Giống NFC | Fractal Tree NFC</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-page: #f8faf9;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --card-border-hover: #059669;
+      --primary: #059669;
+      --primary-hover: #047857;
+      --primary-light: #ecfdf5;
+      --primary-border: #a7f3d0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 12px 30px -4px rgba(5, 150, 105, 0.16);
+      
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 16px 48px;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(245, 158, 11, 0.03) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* STEP CONTAINERS */
+    .step-section {
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .step-section.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =========================================================================
+       BƯỚC 1: CHỌN LOẠI LÁ (14 LOÀI LÁ)
+       ========================================================================= */
+    .step1-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .pill-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .main-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .sub-title {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    .leaf-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+
+    @media (max-width: 360px) {
+      .leaf-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .leaf-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 16px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .leaf-card:hover {
+      border-color: var(--card-border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      background: #fafdfc;
+    }
+
+    .leaf-card:active {
+      transform: translateY(0);
+    }
+
+    .leaf-icon-box {
+      font-size: 26px;
+      width: 44px;
+      height: 44px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .leaf-card:hover .leaf-icon-box {
+      background: var(--primary-light);
+    }
+
+    .leaf-name-box {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .leaf-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .leaf-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .arrow-icon {
+      color: var(--text-subtle);
+      transition: transform 0.2s;
+    }
+
+    .leaf-card:hover .arrow-icon {
+      color: var(--primary);
+      transform: translateX(2px);
+    }
+
+    /* =========================================================================
+       BƯỚC 2: VÒNG TRÒN LOGO HÚT VÀO TRONG & NÚT LẤY HẠT
+       ========================================================================= */
+    .step2-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 10px 0;
+      width: 100%;
+    }
+
+    .selected-leaf-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 30px;
+    }
+
+    /* HIỆU ỨNG VÒNG TRÒN HÚT DẦN VÀO TRONG (INWARD SUCTION PULSE) */
+    .suction-stage {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+
+    /* Vòng tròn đồng tâm hút dần vào trong */
+    .suction-ring {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 2px solid rgba(5, 150, 105, 0.4);
+      pointer-events: none;
+      animation: convergeInward 2.6s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    }
+
+    .suction-ring:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .suction-ring:nth-child(2) {
+      animation-delay: 0.85s;
+    }
+
+    .suction-ring:nth-child(3) {
+      animation-delay: 1.7s;
+    }
+
+    @keyframes convergeInward {
+      0% {
+        transform: scale(2.4);
+        opacity: 0;
+        border-color: rgba(16, 185, 129, 0.15);
+      }
+      25% {
+        opacity: 0.75;
+        border-color: rgba(5, 150, 105, 0.45);
+      }
+      75% {
+        opacity: 0.4;
+        border-color: rgba(5, 150, 105, 0.6);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 0;
+        border-color: var(--primary);
+      }
+    }
+
+    /* VÒNG TRÒN LOGO BIỂU TƯỢNG GAME Ở TRUNG TÂM (ĐỒNG BỘ 100% VỚI LANDING) */
+    .center-logo-circle {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      background: #0B1E1A;
+      border: 3px solid rgba(34, 197, 94, 0.45);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 10px 30px rgba(5, 150, 105, 0.28),
+        0 0 0 8px rgba(16, 185, 129, 0.12);
+      z-index: 10;
+      overflow: hidden;
+      animation: gentleBreathing 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes gentleBreathing {
+      0% { transform: scale(1); box-shadow: 0 10px 30px rgba(5, 150, 105, 0.20), 0 0 0 6px rgba(16, 185, 129, 0.08); }
+      100% { transform: scale(1.04); box-shadow: 0 14px 36px rgba(5, 150, 105, 0.32), 0 0 0 10px rgba(16, 185, 129, 0.15); }
+    }
+
+    .brand-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: inherit;
+    }
+
+    .fallback-logo-svg {
+      width: 64px;
+      height: 64px;
+      fill: #4ade80;
+    }
+
+    /* NÚT LẤY HẠT NGẪU NHIÊN */
+    .btn-action-primary {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 16px 28px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 24px rgba(5, 150, 105, 0.28);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-action-primary:hover {
+      background: linear-gradient(135deg, #047857, #059669);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(5, 150, 105, 0.38);
+    }
+
+    .btn-action-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-action-sub {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .btn-action-sub:hover {
+      color: var(--text-main);
+      text-decoration: underline;
+    }
+
+    /* =========================================================================
+       BƯỚC 3 / KẾT QUẢ: KHI QUÉT THẺ XONG (HIỂN THỊ LOẠI LÁ, MÀU LÁ, VỀ TRANG CHỦ)
+       ========================================================================= */
+    .result-card {
+      background: #ffffff;
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 36px 24px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
+    }
+
+    .success-icon-badge {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      border: 2px solid var(--primary-border);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.15);
+    }
+
+    .result-heading {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .result-subheading {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    /* BẢNG KẾT QUẢ RÕ RÀNG */
+    .result-box-details {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      width: 100%;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+
+    .result-label {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .result-value {
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch-color-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+    }
+
+    .swatch-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+
+    .tag-note {
+      font-size: 11.5px;
+      color: var(--text-subtle);
+      margin-top: 6px;
+    }
+
+    /* NÚT VỀ TRANG CHỦ */
+    .btn-home {
+      background: var(--text-main);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 16px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+    }
+
+    .btn-home:hover {
+      background: #1e293b;
+      transform: translateY(-2px);
+    }
+
+    .btn-home:active {
+      transform: translateY(0);
+    }
+
+    /* NFC MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-pulse {
+      width: 76px;
+      height: 76px;
+      background: var(--primary-light);
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      animation: pulseModal 1.6s infinite;
+    }
+
+    @keyframes pulseModal {
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.4); }
+      70% { box-shadow: 0 0 0 20px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+    }
+
+    .btn-modal-cancel {
+      background: #f1f5f9;
+      color: var(--text-main);
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <!-- =======================================================================
+         BƯỚC 1: HIỂN THỊ 14 MẪU LÁ
+         ======================================================================= -->
+    <section class="step-section active" id="step1">
+      <div class="step1-header">
+        <div class="pill-step">BƯỚC 1 / 2</div>
+        <h1 class="main-title">Chọn Loại Lá</h1>
+        <p class="sub-title">Chạm vào một loại lá bạn muốn gieo mầm hạt giống</p>
+      </div>
+
+      <div class="leaf-grid" id="leafGrid">
+        <!-- Javascript renders 14 leaf cards here -->
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         BƯỚC 2: VÒNG TRÒN LOGO HÚT VÀO TRONG & NÚT LẤY HẠT NGẪU NHIÊN
+         ======================================================================= -->
+    <section class="step-section" id="step2">
+      <div class="step2-container">
+        <!-- CHIP BÁO LOẠI LÁ ĐÃ CHỌN -->
+        <div class="selected-leaf-pill">
+          <span id="selectedLeafIcon">🌿</span>
+          <span id="selectedLeafName">Lá Đỉnh Nhọn</span>
+        </div>
+
+        <!-- HIỆU ỨNG VÒNG TRÒN LỚN HÚT DẦN VÀO TRONG TÂM LOGO -->
+        <div class="suction-stage">
+          <div class="suction-ring"></div>
+          <div class="suction-ring"></div>
+          <div class="suction-ring"></div>
+
+          <!-- LOGO BIỂU TƯỢNG GAME Ở TRUNG TÂM (GIỐNG 100% TRANG LANDING) -->
+          <div class="center-logo-circle">
+            <img src="./assets/logo.png" 
+                 alt="Grow Tree Logo" 
+                 class="brand-logo-img" 
+                 id="gameLogoImg"
+                 onerror="if(!this.tried){this.tried=true;this.src='../assets/logo.png';}else if(!this.tried2){this.tried2=true;this.src='logo.png';}else{handleLogoFallback();}">
+          </div>
+        </div>
+
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">Sẵn Sàng Gieo Hạt</h2>
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 28px; max-width: 340px;">
+          Hệ thống sẽ lấy ngẫu nhiên một màu Common của loại lá này để tạo hạt giống và ghi vào thẻ.
+        </p>
+
+        <!-- NÚT LẤY HẠT NGẪU NHIÊN -->
+        <button class="btn-action-primary" id="btnRollSeed" onclick="onRollAndWriteSeed()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H4V4h16v16zM18 6h-5c-1.1 0-2 .9-2 2v2.28c-.6.35-1 .98-1 1.72 0 1.1.9 2 2 2s2-.9 2-2c0-.74-.4-1.38-1-1.72V8h3v8H8V8h2V6H8c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+          </svg>
+          <span>Lấy hạt ngẫu nhiên</span>
+        </button>
+
+        <button class="btn-action-sub" onclick="goToStep(1)">
+          ← Chọn lại mẫu lá khác
+        </button>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         BƯỚC 3 / TRẠNG THÁI KẾT QUẢ: HIỂN THỊ LOẠI LÁ, MÀU LÁ & NÚT VỀ TRANG CHỦ
+         ======================================================================= -->
+    <section class="step-section" id="step3">
+      <div class="result-card">
+        <div class="success-icon-badge">✓</div>
+        <h2 class="result-heading">Ghi Thẻ Thành Công!</h2>
+        <p class="result-subheading">Hạt giống đã được nạp hoàn chỉnh vào thẻ NFC của bạn</p>
+
+        <div class="result-box-details">
+          <div class="result-row">
+            <span class="result-label">Loại lá:</span>
+            <span class="result-value" id="resultLeafVal">
+              <span id="resLeafIcon">🌿</span>
+              <span id="resLeafName">Lá Đỉnh Nhọn</span>
+            </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">Màu lá nhận được:</span>
+            <span class="result-value" id="resultColorVal">
+              <span class="swatch-color-pill">
+                <span class="swatch-dot" id="resColorDot" style="background: #34d399;"></span>
+                <span id="resColorName">Ngọc Bích</span>
+              </span>
+            </span>
+          </div>
+
+          <div class="result-row">
+            <span class="result-label">Độ hiếm:</span>
+            <span class="result-value" style="color: var(--primary);">🌱 Common (1 Ngày)</span>
+          </div>
+        </div>
+
+        <p class="tag-note">* Màu sắc được hệ thống chọn ngẫu nhiên từ nhóm màu Common</p>
+      </div>
+
+      <!-- NÚT VỀ TRANG CHỦ -->
+      <button class="btn-home" onclick="goToStep(1)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>Về trang chủ</span>
+      </button>
+    </section>
+
+  </div>
+
+  <!-- MODAL QUÉT SÓNG NFC KHI BẤM "LẤY HẠT NGẪU NHIÊN" -->
+  <div class="modal-overlay" id="nfcModal">
+    <div class="modal-card">
+      <div class="modal-pulse" id="modalPulseIcon">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="var(--primary)">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H4V4h16v16zM18 6h-5c-1.1 0-2 .9-2 2v2.28c-.6.35-1 .98-1 1.72 0 1.1.9 2 2 2s2-.9 2-2c0-.74-.4-1.38-1-1.72V8h3v8H8V8h2V6H8c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+        </svg>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 8px;" id="nfcModalTitle">ÁP THẺ NFC VÀO LƯNG MÁY</h3>
+      <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;" id="nfcModalMsg">
+        Đang chờ chạm thẻ NTAG213 / 215 / 216 để ghi hạt giống...
+      </div>
+      <div id="nfcModalActions" style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 18px;">
+        <button class="btn-modal-cancel" id="btnNfcCancel" onclick="closeNfcModal()">Hủy Bỏ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. DATA: 14 LOÀI LÁ & BẢNG MÀU COMMON
+    // =========================================================================
+    const ALL_LEAF_TYPES = [
+      { id: 'pointed', byteIndex: 0, name: 'Lá Đỉnh Nhọn', icon: '🌿' },
+      { id: 'maple', byteIndex: 1, name: 'Lá Phong 7 Thùy', icon: '🍁' },
+      { id: 'maple5', byteIndex: 2, name: 'Lá Phong 5 Khía', icon: '🍁' },
+      { id: 'ginkgo_fan', byteIndex: 3, name: 'Lá Ngân Hạnh', icon: '🍂' },
+      { id: 'heart', byteIndex: 4, name: 'Lá Trái Tim', icon: '💚' },
+      { id: 'single_needle', byteIndex: 5, name: 'Lá Me Lông Chim', icon: '🌾' },
+      { id: 'tung_lahan', byteIndex: 6, name: 'Tùng La Hán', icon: '🎋' },
+      { id: 'sakura_leaf', byteIndex: 7, name: 'Hoa Anh Đào', icon: '🌸' },
+      { id: 'eucalyptus_long', byteIndex: 8, name: 'Bạch Đàn Dài', icon: '🍃' },
+      { id: 'oval', byteIndex: 9, name: 'Lá Oval', icon: '🥚' },
+      { id: 'bodhi', byteIndex: 10, name: 'Lá Bồ Đề', icon: '🍃' },
+      { id: 'round', byteIndex: 11, name: 'Khuynh Diệp', icon: '🪙' },
+      { id: 'needle', byteIndex: 12, name: 'Lá Thông 7 Kim', icon: '🌲' },
+      { id: 'willow', byteIndex: 13, name: 'Liễu Rủ', icon: '🌾' }
+    ];
+
+    // Bảng màu Common của từng loại lá
+    const LEAF_COMMON_COLOR_POOLS = {
+      // Anh đào: màu Hồng Phấn là Common
+      'sakura_leaf': [
+        { id: 'sakura', name: 'Hồng Phấn', hex: '#fda4ba' },
+        { id: 'emerald', name: 'Ngọc Bích', hex: '#34d399' },
+        { id: 'eucalyptus', name: 'Khói Bạc', hex: '#92b9a5' },
+        { id: 'autumn', name: 'Phong Đỏ', hex: '#dc2626' }
+      ],
+      // Lá phong (cả 2 loại): màu Hoàng Hôn là Common
+      'maple': [
+        { id: 'sunset', name: 'Hoàng Hôn', hex: '#f43f5e' },
+        { id: 'emerald', name: 'Ngọc Bích', hex: '#34d399' },
+        { id: 'eucalyptus', name: 'Khói Bạc', hex: '#92b9a5' },
+        { id: 'autumn', name: 'Phong Đỏ', hex: '#dc2626' }
+      ],
+      'maple5': [
+        { id: 'sunset', name: 'Hoàng Hôn', hex: '#f43f5e' },
+        { id: 'emerald', name: 'Ngọc Bích', hex: '#34d399' },
+        { id: 'eucalyptus', name: 'Khói Bạc', hex: '#92b9a5' },
+        { id: 'autumn', name: 'Phong Đỏ', hex: '#dc2626' }
+      ],
+      // Ngân hạnh: màu Hoàng Kim là Common
+      'ginkgo_fan': [
+        { id: 'ginkgo', name: 'Hoàng Kim', hex: '#facc15' },
+        { id: 'emerald', name: 'Ngọc Bích', hex: '#34d399' },
+        { id: 'eucalyptus', name: 'Khói Bạc', hex: '#92b9a5' },
+        { id: 'autumn', name: 'Phong Đỏ', hex: '#dc2626' }
+      ],
+      // Các loài lá khác: 3 màu Common cơ bản
+      'default': [
+        { id: 'emerald', name: 'Ngọc Bích', hex: '#34d399' },
+        { id: 'eucalyptus', name: 'Khói Bạc', hex: '#92b9a5' },
+        { id: 'autumn', name: 'Phong Đỏ', hex: '#dc2626' }
+      ]
+    };
+
+    function getCommonColorsFor(leafId) {
+      return LEAF_COMMON_COLOR_POOLS[leafId] || LEAF_COMMON_COLOR_POOLS['default'];
+    }
+
+    // =========================================================================
+    // 2. APP STATE & SOUND
+    // =========================================================================
+    let currentLeaf = ALL_LEAF_TYPES[0];
+    let generatedColor = null;
+    let lastGeneratedPayload = null;
+    let nfcController = null;
+    let audioCtx = null;
+
+    function playTone(freq = 528, type = 'sine', duration = 0.2) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function handleLogoFallback() {
+      const container = document.querySelector('.center-logo-circle');
+      if (container) {
+        container.innerHTML = `
+          <svg class="fallback-logo-svg" viewBox="0 0 24 24">
+            <path d="M12 2C7.03 2 3 6.03 3 11c0 3.98 2.58 7.35 6.19 8.53l.81-1.83C7.14 16.8 5 14.16 5 11c0-3.86 3.14-7 7-7s7 3.14 7 7c0 3.16-2.14 5.8-5 6.7l.81 1.83C18.42 18.35 21 14.98 21 11c0-4.97-4.03-9-9-9zm-1 5v6.59l4.7 4.7 1.41-1.41L13 12.7V7h-2z"/>
+          </svg>
+        `;
+      }
+    }
+
+    // =========================================================================
+    // 3. STEP MANAGEMENT (BƯỚC 1 -> BƯỚC 2 -> KẾT QUẢ)
+    // =========================================================================
+    function goToStep(stepNum) {
+      document.getElementById('step1').classList.toggle('active', stepNum === 1);
+      document.getElementById('step2').classList.toggle('active', stepNum === 2);
+      document.getElementById('step3').classList.toggle('active', stepNum === 3);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderLeafGrid() {
+      const grid = document.getElementById('leafGrid');
+      grid.innerHTML = ALL_LEAF_TYPES.map(leaf => `
+        <div class="leaf-card" onclick="onPickLeaf('${leaf.id}')">
+          <div class="leaf-icon-box">${leaf.icon}</div>
+          <div class="leaf-name-box">
+            <div class="leaf-title">${leaf.name}</div>
+            <div class="leaf-subtitle">Chạm để chọn</div>
+          </div>
+          <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      `).join('');
+    }
+
+    // Khi người dùng bấm vào 1 mẫu lá ở Bước 1:
+    // LẬP TỨC ẨN HẾT CÁC MẪU LÁ ĐI, CHUYỂN SANG BƯỚC 2
+    function onPickLeaf(leafId) {
+      currentLeaf = ALL_LEAF_TYPES.find(l => l.id === leafId) || ALL_LEAF_TYPES[0];
+      playTone(440, 'triangle', 0.12);
+
+      // Cập nhật thông tin loài lá đã chọn sang Bước 2
+      document.getElementById('selectedLeafIcon').innerText = currentLeaf.icon;
+      document.getElementById('selectedLeafName').innerText = currentLeaf.name;
+
+      // Chuyển ngay sang Bước 2
+      goToStep(2);
+    }
+
+    // =========================================================================
+    // 4. 64-BYTE BINARY PACKER & CRC-16
+    // =========================================================================
+    function hexToRgb565(hexStr) {
+      let c = parseInt(hexStr.replace('#', ''), 16);
+      let r = (c >> 16) & 0xff;
+      let g = (c >> 8) & 0xff;
+      let b = c & 0xff;
+      return ((r & 0xf8) << 8) | ((g & 0xfc) << 3) | (b >> 3);
+    }
+
+    function crc16Ccitt(buffer, len) {
+      let crc = 0xffff;
+      for (let i = 0; i < len; i++) {
+        crc ^= (buffer[i] << 8);
+        for (let j = 0; j < 8; j++) {
+          if (crc & 0x8000) crc = ((crc << 1) ^ 0x1021) & 0xffff;
+          else crc = (crc << 1) & 0xffff;
+        }
+      }
+      return crc;
+    }
+
+    function buildPayload(leaf, color) {
+      const buffer = new ArrayBuffer(64);
+      const view = new DataView(buffer);
+      const uint8 = new Uint8Array(buffer);
+
+      const treeId = Math.floor(100000 + Math.random() * 900000);
+      const dnaSeed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
+
+      view.setUint16(0, 0x5452, false);                   // Byte 0-1: 'TR'
+      view.setUint8(2, 0x01);                             // Byte 2: Version 1
+      view.setUint8(3, 0x00);                             // Byte 3: Flags (Unplanted Seed)
+      view.setUint32(4, treeId, false);                   // Byte 4-7: Tree ID
+      view.setBigUint64(8, 0n, false);                     // Byte 8-15: Planted At (0)
+      view.setUint32(16, 86400, false);                   // Byte 16-19: Growth Duration (86,400s)
+      view.setUint8(20, leaf.byteIndex);                  // Byte 20: Leaf Type Index
+      view.setUint8(21, 48);                              // Byte 21: Angle
+      view.setUint8(22, 191);                             // Byte 22: Decay
+      view.setUint8(23, 9);                               // Byte 23: Depth
+      view.setUint16(24, hexToRgb565('#2d2219'), false);  // Byte 24-25: Trunk Color
+      view.setUint16(26, hexToRgb565(color.hex), false);  // Byte 26-27: Leaf Color (Common)
+      view.setUint32(28, dnaSeed, false);                 // Byte 28-31: DNA Seed
+      view.setUint8(32, 0);                               // Byte 32: Generation 0 (P)
+      view.setUint32(33, 0x00000000, false);              // Byte 33-36: Parent ID (0)
+      view.setUint8(37, 80);                              // Byte 37: Tree Variation
+      view.setUint8(38, 150);                             // Byte 38: Thickness Decay
+      view.setUint8(39, 36);                              // Byte 39: Init Thickness
+
+      // Byte 62-63: Checksum CRC-16
+      const checksum = crc16Ccitt(uint8, 62);
+      view.setUint16(62, checksum, false);
+
+      return { uint8, treeId };
+    }
+
+    // =========================================================================
+    // 5. BẤM NÚT "LẤY HẠT NGẪU NHIÊN" -> GHI THẺ NFC -> HIỂN THỊ KẾT QUẢ
+    // =========================================================================
+    async function onRollAndWriteSeed() {
+      // 1. Chỉ lấy danh sách màu Common của loài lá đã chọn
+      const commonColors = getCommonColorsFor(currentLeaf.id);
+
+      // 2. Bốc ngẫu nhiên 1 màu Common (người dùng không được chọn màu này)
+      generatedColor = commonColors[Math.floor(Math.random() * commonColors.length)];
+
+      // 3. Đóng gói 64 Bytes nhị phân
+      const { uint8, treeId } = buildPayload(currentLeaf, generatedColor);
+
+      const modal = document.getElementById('nfcModal');
+      const titleEl = document.getElementById('nfcModalTitle');
+      const msgEl = document.getElementById('nfcModalMsg');
+      const actionsEl = document.getElementById('nfcModalActions');
+
+      // Kiểm tra hỗ trợ Web NFC API
+      if (!('NDEFReader' in window)) {
+        titleEl.innerText = '⚠️ Thiết Bị Chưa Hỗ Trợ NFC';
+        msgEl.innerHTML = `
+          <div style="text-align: left; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 14px; font-size: 13px; color: #92400e; line-height: 1.6;">
+            <b>Trình duyệt hiện tại chưa hỗ trợ Web NFC:</b>
+            <p style="margin-top: 6px;">Vui lòng mở trang web này trên trình duyệt <b>Google Chrome (điện thoại Android)</b> có hỗ trợ và đã bật tính năng NFC để ghi thẻ.</p>
+          </div>
+        `;
+        actionsEl.innerHTML = `<button class="btn-modal-cancel" onclick="closeNfcModal()">Đã Hiểu</button>`;
+        modal.classList.add('show');
+        return;
+      }
+
+      // Kích hoạt phiên quét ghi thẻ NFC
+      titleEl.innerText = 'ÁP THẺ NFC VÀO LƯNG MÁY';
+      msgEl.innerHTML = `Đang chờ chạm thẻ để ghi hạt <b>${currentLeaf.name}</b>...`;
+      actionsEl.innerHTML = `<button class="btn-modal-cancel" onclick="closeNfcModal()">Hủy Bỏ</button>`;
+      modal.classList.add('show');
+      playTone(528);
+
+      try {
+        const ndef = new NDEFReader();
+        nfcController = new AbortController();
+
+        await ndef.write({
+          records: [
+            {
+              recordType: "mime",
+              mediaType: "application/vnd.treenfc.payload",
+              data: uint8
+            }
+          ]
+        }, { signal: nfcController.signal });
+
+        playTone(880, 'sine', 0.25);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 150]);
+
+        msgEl.innerHTML = `<span style="color: #059669; font-weight: 700;">✅ Đã ghi thẻ thành công!</span>`;
+
+        setTimeout(() => {
+          closeNfcModal();
+          showResult();
+        }, 1000);
+
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+
+        const isPermissionDenied = err.name === 'NotAllowedError' || (err.message && err.message.toLowerCase().includes('permission'));
+
+        if (isPermissionDenied) {
+          titleEl.innerText = '⚠️ Quyền NFC Đang Bị Chặn';
+          msgEl.innerHTML = `
+            <div style="text-align: left; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 14px; font-size: 12.5px; color: #9f1239; line-height: 1.6;">
+              <b>Trình duyệt Chrome chưa được cấp quyền NFC:</b>
+              <ol style="margin-left: 18px; margin-top: 6px;">
+                <li>Bấm vào biểu tượng <b>Cài đặt trang web</b> (hoặc 🔒) bên cạnh thanh địa chỉ Chrome.</li>
+                <li>Chọn <b>Quyền (Permissions)</b> ➜ <b>NFC</b> ➜ Chuyển sang <b>Cho phép</b>.</li>
+                <li>Sau đó bấm nút <b>"Thử Lại"</b> dưới đây.</li>
+              </ol>
+            </div>
+          `;
+          actionsEl.innerHTML = `
+            <button class="btn-action-primary" style="padding: 13px; font-size: 14px; width: 100%;" onclick="onRollAndWriteSeed()">
+              🔄 Đã Bật Quyền, Thử Lại
+            </button>
+            <button class="btn-modal-cancel" onclick="closeNfcModal()">Đóng</button>
+          `;
+        } else {
+          msgEl.innerHTML = `<span style="color: #e11d48;">❌ Lỗi: ${err.message || 'Không thể ghi thẻ.'}</span>`;
+          actionsEl.innerHTML = `
+            <button class="btn-action-primary" style="padding: 13px; font-size: 14px; width: 100%;" onclick="onRollAndWriteSeed()">
+              🔄 Thử Lại
+            </button>
+            <button class="btn-modal-cancel" onclick="closeNfcModal()">Đóng</button>
+          `;
+        }
+      }
+    }
+
+    function showResult() {
+      // Cập nhật kết quả: Loại lá gì & Màu lá gì
+      document.getElementById('resLeafIcon').innerText = currentLeaf.icon;
+      document.getElementById('resLeafName').innerText = currentLeaf.name;
+      document.getElementById('resColorDot').style.backgroundColor = generatedColor.hex;
+      document.getElementById('resColorName').innerText = generatedColor.name;
+
+      playTone(660, 'sine', 0.2);
+      goToStep(3);
+    }
+
+    function closeNfcModal() {
+      document.getElementById('nfcModal').classList.remove('show');
+      if (nfcController) {
+        nfcController.abort();
+        nfcController = null;
+      }
+    }
+
+    // =========================================================================
+    // 6. KHỞI CHẠY BAN ĐẦU
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLeafGrid();
+      goToStep(1);
+    });
+  </script>
+</body>
+</html>
